@@ -1,0 +1,1 @@
+UPDATE public.opportunities SET application_stage = CASE application_stage WHEN 'in_review' THEN 'drafting' WHEN 'paid' THEN 'submitted' WHEN 'lost' THEN 'declined' END WHERE application_stage IN ('in_review','paid','lost');

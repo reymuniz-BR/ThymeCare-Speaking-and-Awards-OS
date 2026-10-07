@@ -1,0 +1,1 @@
+update public.content_assets set category = 'prior_application' where category = 'other' and (name ilike '%draft%' or name ilike '%response%' or name ilike '%questionnaire%');

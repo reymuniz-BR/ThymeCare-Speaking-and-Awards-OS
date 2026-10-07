@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.assign_answer_version() FROM PUBLIC, anon, authenticated;
