@@ -1,0 +1,370 @@
+[
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "information_not_available",
+    "label": "Information Not Available",
+    "tone": "neutral",
+    "sort_order": 10
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "monitoring",
+    "label": "Monitoring",
+    "tone": "info",
+    "sort_order": 20
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "submission_open",
+    "label": "Submission Open",
+    "tone": "info",
+    "sort_order": 30
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "evaluating",
+    "label": "Evaluating",
+    "tone": "warning",
+    "sort_order": 40
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "planning_to_submit",
+    "label": "Planning to Submit",
+    "tone": "warning",
+    "sort_order": 50
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "drafting",
+    "label": "Drafting",
+    "tone": "primary",
+    "sort_order": 60
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "client_review",
+    "label": "Client Review",
+    "tone": "primary",
+    "sort_order": 70
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "submitted",
+    "label": "Submitted",
+    "tone": "info",
+    "sort_order": 80
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "accepted",
+    "label": "Accepted",
+    "tone": "success",
+    "sort_order": 90
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "declined",
+    "label": "Declined",
+    "tone": "critical",
+    "sort_order": 100
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "sponsoring",
+    "label": "Sponsoring",
+    "tone": "success",
+    "sort_order": 110
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "reached_out",
+    "label": "Reached Out",
+    "tone": "info",
+    "sort_order": 120
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "passed",
+    "label": "Passed",
+    "tone": "neutral",
+    "sort_order": 130
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "not_open_yet",
+    "label": "Not Open Yet",
+    "tone": "neutral",
+    "sort_order": 10
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "monitoring",
+    "label": "Monitoring",
+    "tone": "info",
+    "sort_order": 20
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "evaluating",
+    "label": "Evaluating",
+    "tone": "warning",
+    "sort_order": 30
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "planning_to_submit",
+    "label": "Planning to Submit",
+    "tone": "warning",
+    "sort_order": 40
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "in_progress",
+    "label": "In Progress",
+    "tone": "primary",
+    "sort_order": 50
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "client_review",
+    "label": "Client Review",
+    "tone": "primary",
+    "sort_order": 60
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "submitted",
+    "label": "Submitted",
+    "tone": "info",
+    "sort_order": 70
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "awaiting_results",
+    "label": "Awaiting Results",
+    "tone": "info",
+    "sort_order": 80
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "won",
+    "label": "Won",
+    "tone": "success",
+    "sort_order": 90
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "finalist",
+    "label": "Finalist",
+    "tone": "success",
+    "sort_order": 100
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "not_selected",
+    "label": "Not Selected",
+    "tone": "critical",
+    "sort_order": 110
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "passed",
+    "label": "Passed",
+    "tone": "neutral",
+    "sort_order": 120
+  },
+  {
+    "kind": "priority",
+    "applies_to": null,
+    "value": "critical",
+    "label": "Critical",
+    "tone": "critical",
+    "sort_order": 10
+  },
+  {
+    "kind": "priority",
+    "applies_to": null,
+    "value": "high",
+    "label": "High",
+    "tone": "warning",
+    "sort_order": 20
+  },
+  {
+    "kind": "priority",
+    "applies_to": null,
+    "value": "medium",
+    "label": "Medium",
+    "tone": "info",
+    "sort_order": 30
+  },
+  {
+    "kind": "priority",
+    "applies_to": null,
+    "value": "low",
+    "label": "Low",
+    "tone": "neutral",
+    "sort_order": 40
+  },
+  {
+    "kind": "deadline_type",
+    "applies_to": null,
+    "value": "confirmed",
+    "label": "Confirmed",
+    "tone": "success",
+    "sort_order": 10
+  },
+  {
+    "kind": "deadline_type",
+    "applies_to": null,
+    "value": "estimated",
+    "label": "Estimated",
+    "tone": "warning",
+    "sort_order": 20
+  },
+  {
+    "kind": "deadline_type",
+    "applies_to": null,
+    "value": "rolling",
+    "label": "Rolling",
+    "tone": "info",
+    "sort_order": 30
+  },
+  {
+    "kind": "deadline_type",
+    "applies_to": null,
+    "value": "tbd",
+    "label": "TBD",
+    "tone": "neutral",
+    "sort_order": 40
+  },
+  {
+    "kind": "deadline_type",
+    "applies_to": null,
+    "value": "invitation_only",
+    "label": "Invitation Only",
+    "tone": "primary",
+    "sort_order": 50
+  },
+  {
+    "kind": "recommendation",
+    "applies_to": null,
+    "value": "recommended",
+    "label": "Recommended",
+    "tone": "success",
+    "sort_order": 10
+  },
+  {
+    "kind": "recommendation",
+    "applies_to": null,
+    "value": "needs_review",
+    "label": "Needs Review",
+    "tone": "warning",
+    "sort_order": 20
+  },
+  {
+    "kind": "recommendation",
+    "applies_to": null,
+    "value": "do_not_pursue",
+    "label": "Do Not Pursue",
+    "tone": "critical",
+    "sort_order": 30
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "pending",
+    "label": "Pending",
+    "tone": "neutral",
+    "sort_order": 10
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "won",
+    "label": "Won",
+    "tone": "success",
+    "sort_order": 20
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "finalist",
+    "label": "Finalist",
+    "tone": "success",
+    "sort_order": 30
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "accepted",
+    "label": "Accepted",
+    "tone": "success",
+    "sort_order": 40
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "not_selected",
+    "label": "Not Selected",
+    "tone": "critical",
+    "sort_order": 50
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "declined",
+    "label": "Declined",
+    "tone": "critical",
+    "sort_order": 60
+  },
+  {
+    "kind": "outcome",
+    "applies_to": null,
+    "value": "withdrawn",
+    "label": "Withdrawn",
+    "tone": "neutral",
+    "sort_order": 70
+  },
+  {
+    "kind": "status",
+    "applies_to": "speaking",
+    "value": "deadline_passed",
+    "label": "Deadline Passed",
+    "tone": "muted",
+    "sort_order": 14
+  },
+  {
+    "kind": "status",
+    "applies_to": "award",
+    "value": "deadline_passed",
+    "label": "Deadline Passed",
+    "tone": "muted",
+    "sort_order": 13
+  }
+]
