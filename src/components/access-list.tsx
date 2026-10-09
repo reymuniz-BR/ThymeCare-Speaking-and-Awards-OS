@@ -39,14 +39,18 @@ export function AccessList() {
     e.preventDefault();
     const value = email.trim().toLowerCase();
     if (!value) return;
+    // The document ID is the lowercase email (see firestore.rules); the data
+    // layer derives it from `email`, so a duplicate is a clean 23505.
     const { error } = await supabase
       .from("allowed_emails")
       .insert({ email: value, note: note.trim() || null });
     if (error) {
       toast.error(
         error.message.includes("row-level security")
-          ? "Only admins and managers can manage access."
-          : error.message,
+          ? "Only admins can manage access."
+          : error.code === "23505"
+            ? "That email is already approved."
+            : error.message,
       );
       return;
     }
@@ -59,7 +63,11 @@ export function AccessList() {
   async function remove(id: string) {
     const { error } = await supabase.from("allowed_emails").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(
+        error.message.includes("row-level security")
+          ? "Only admins can manage access."
+          : error.message,
+      );
       return;
     }
     invalidate(["allowed_emails"]);
@@ -68,7 +76,7 @@ export function AccessList() {
   return (
     <Panel
       title="Team access & approvals"
-      hint="Anyone signing in with their company Google account receives instant access. You can also manually pre-approve specific emails below."
+      hint="Only these emails can sign in. Signing in with a Google account or a password never approves it. Admins can edit."
     >
       <form onSubmit={add} className="flex flex-wrap items-end gap-2 border-b border-border p-3">
         <div>

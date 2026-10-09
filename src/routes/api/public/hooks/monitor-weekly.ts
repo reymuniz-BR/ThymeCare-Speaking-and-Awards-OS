@@ -1,28 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { authorizeHook, json } from "@/lib/hook-auth.server";
 
 const JOB_NAME = "monitor-weekly";
 const MIN_INTERVAL_MS = 60 * 60 * 1000; // at most one sweep per hour
-
-/** Constant-time string comparison (avoids leaking the secret via timing). */
-function safeEqual(a: string, b: string): boolean {
-  const enc = new TextEncoder();
-  const av = enc.encode(a);
-  const bv = enc.encode(b);
-  // Length is compared without an early return; unequal lengths still fail.
-  let diff = av.length ^ bv.length;
-  const max = Math.max(av.length, bv.length);
-  for (let i = 0; i < max; i++) {
-    diff |= (av[i] ?? 0) ^ (bv[i] ?? 0);
-  }
-  return diff === 0;
-}
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 /**
  * Weekly monitoring sweep endpoint, called by the scheduled job.
@@ -38,20 +18,9 @@ export const Route = createFileRoute("/api/public/hooks/monitor-weekly")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["MONITOR_WEBHOOK_SECRET"] ?? "";
-        const header = request.headers.get("x-monitor-secret");
-        const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-        const provided = header ?? bearer;
-
-        const isCloudScheduler =
-          request.headers.get("x-cloudscheduler") === "true" ||
-          request.headers.get("user-agent")?.includes("Google-Cloud-Scheduler");
-
-        if (!isCloudScheduler && expected) {
-          if (!provided || !safeEqual(provided, expected)) {
-            return json({ error: "Unauthorized" }, 401);
-          }
-        }
+        // Env-secret only: there is no stored job secret for this route.
+        const denied = await authorizeHook(request, { acceptEnvSecret: true });
+        if (denied) return denied;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

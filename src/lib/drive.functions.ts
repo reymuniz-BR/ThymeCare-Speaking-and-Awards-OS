@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireManagerAuth } from "@/integrations/supabase/auth-middleware";
+import type { Cursor } from "@/lib/drive-cursor.server";
 
 const GOOGLE_DRIVE_API = "https://www.googleapis.com/drive/v3";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
@@ -95,29 +96,6 @@ function categorize(name: string): string {
   return "other";
 }
 
-/** Cursor across the folder tree: which folders are still queued, and where we are in the current one. */
-type Cursor = { queue: string[]; pageToken: string | null; startedAt: string };
-
-function freshCursor(): Cursor {
-  return { queue: [ROOT_FOLDER_ID], pageToken: null, startedAt: new Date().toISOString() };
-}
-
-function encodeCursor(c: Cursor): string {
-  return btoa(JSON.stringify(c));
-}
-function decodeCursor(token: string | null): Cursor {
-  if (!token) return freshCursor();
-  try {
-    const parsed = JSON.parse(atob(token)) as Cursor;
-    if (Array.isArray(parsed.queue)) {
-      return { ...parsed, startedAt: parsed.startedAt ?? new Date().toISOString() };
-    }
-  } catch {
-    /* fall through to a fresh scan */
-  }
-  return freshCursor();
-}
-
 /**
  * The page cursor round-trips through the client, so a folder id in the queue
  * is untrusted input. Confirm the folder really sits inside ROOT_FOLDER_ID by
@@ -167,11 +145,13 @@ export type DriveSyncPage = {
  * token, then keep calling with `nextPageToken` until it comes back null.
  */
 export const syncDriveLibrary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  // A finished scan purges library rows it did not see; the original RLS reserved
+  // deletes for managers (can_manage), so the whole sync is manager-only.
+  .middleware([requireManagerAuth])
   .inputValidator((input: { pageToken?: string | null } | undefined) => ({
     pageToken: input?.pageToken ?? null,
   }))
-  .handler(async ({ data }): Promise<DriveSyncPage> => {
+  .handler(async ({ data, context }): Promise<DriveSyncPage> => {
     if (!process.env["GOOGLE_DRIVE_API_KEY"]) {
       return {
         scanned: 0,
@@ -185,7 +165,9 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
       };
     }
 
-    const cursor = decodeCursor(data.pageToken);
+    const { decodeCursor, encodeCursor } = await import("@/lib/drive-cursor.server");
+    const db = context.supabase;
+    const cursor = await decodeCursor(db, data.pageToken, ROOT_FOLDER_ID);
     const folderId = cursor.queue[0];
     if (!folderId) {
       return {
@@ -248,8 +230,7 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
     });
 
     if (rows.length) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin
+      const { error } = await db
         .from("content_assets")
         .upsert(rows as never, { onConflict: "drive_file_id" });
       if (error) errors.push(`Could not save ${rows.length} files: ${error.message}`);
@@ -268,13 +249,12 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
     // Scan finished: drop anything in the library that this run did not see,
     // i.e. files that live outside the Events & Awards folder or were removed.
     if (!nextQueue.length) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error: purgeError } = await supabaseAdmin
+      const { error: purgeError } = await db
         .from("content_assets")
         .delete()
         .lt("last_synced_at", cursor.startedAt);
       if (purgeError) errors.push(`Could not remove out-of-scope files: ${purgeError.message}`);
-      const { error: nullPurgeError } = await supabaseAdmin
+      const { error: nullPurgeError } = await db
         .from("content_assets")
         .delete()
         .is("last_synced_at", null);
@@ -287,6 +267,6 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
       skipped: 0,
       byCategory: errors.length ? {} : byCategory,
       errors,
-      nextPageToken: nextQueue.length ? encodeCursor(next) : null,
+      nextPageToken: nextQueue.length ? await encodeCursor(db, next) : null,
     };
   });

@@ -26,7 +26,7 @@ export const discoverOpportunities = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { findDuplicate, DUPLICATE_CONFIRMED, DUPLICATE_SUSPECTED, FOCUS_AREAS } =
       await import("@/lib/discovery");
     const focus = data.focus.length ? data.focus : FOCUS_AREAS;
@@ -42,7 +42,7 @@ export const discoverOpportunities = createServerFn({ method: "POST" })
     const { activeModel } = await import("@/lib/ai-gateway.server");
     const aiModel = activeModel();
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = context.supabase;
 
     // Existing discoveries count as "already known" too, so repeat runs stay clean.
     const { data: priorDiscoveries } = await supabaseAdmin

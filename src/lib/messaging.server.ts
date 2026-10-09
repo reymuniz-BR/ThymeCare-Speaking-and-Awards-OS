@@ -1,5 +1,6 @@
 /** Server-only retrieval of the master messaging document from Google Drive. */
 
+import type { AppDb } from "@/integrations/supabase/firestore/builder";
 import {
   MASTER_MESSAGING_DOC_ID,
   MASTER_MESSAGING_DOC_URL,
@@ -47,18 +48,19 @@ async function exportDocText(): Promise<string> {
   return res.text();
 }
 
-export async function pullMasterMessaging(): Promise<{ sections: number; syncedAt: string }> {
+export async function pullMasterMessaging(
+  db: AppDb,
+): Promise<{ sections: number; syncedAt: string }> {
   const text = await exportDocText();
   const sections = parseMessagingSections(text);
   if (!sections.length) {
     throw new Error("The master messaging document came back empty.");
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const syncedAt = new Date().toISOString();
 
   // Replace the previous pull so removed messaging never lingers as "approved".
-  const { error: purgeError } = await supabaseAdmin
+  const { error: purgeError } = await db
     .from("content_snippets")
     .delete()
     .contains("tags", [MASTER_MESSAGING_TAG]);
@@ -71,7 +73,7 @@ export async function pullMasterMessaging(): Promise<{ sections: number; syncedA
     tags: [MASTER_MESSAGING_TAG, "messaging"],
   }));
 
-  const { error } = await supabaseAdmin.from("content_snippets").insert(rows as never);
+  const { error } = await db.from("content_snippets").insert(rows as never);
   if (error) throw new Error(error.message);
 
   return { sections: rows.length, syncedAt };

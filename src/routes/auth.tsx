@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase, isApprovedMember, NOT_APPROVED_MESSAGE } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +9,8 @@ import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { denied?: boolean } =>
+    search["denied"] ? { denied: true } : {},
   head: () => ({
     meta: [
       { title: "Sign in — Thyme Care Speaking & Awards OS" },
@@ -57,12 +58,17 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const { denied } = Route.useSearch();
+
+  useEffect(() => {
+    if (denied) toast.error(NOT_APPROVED_MESSAGE);
+  }, [denied]);
+
   useEffect(() => {
     import("@/lib/firebase").then(({ auth }) => {
-      auth.authStateReady().then(() => {
-        supabase.auth.getUser().then(({ data }) => {
-          if (data.user) navigate({ to: "/dashboard", replace: true });
-        });
+      auth.authStateReady().then(async () => {
+        // Only approved team members skip the sign-in screen.
+        if (await isApprovedMember()) navigate({ to: "/dashboard", replace: true });
       });
     });
   }, [navigate]);
@@ -70,59 +76,22 @@ function AuthPage() {
   async function handleGoogle() {
     setBusy(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
-      const { auth, db } = await import("@/lib/firebase");
-      const { doc, setDoc } = await import("firebase/firestore");
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      if (user) {
-        try {
-          const profileDoc = doc(db, "profiles", user.uid);
-          await setDoc(
-            profileDoc,
-            {
-              id: user.uid,
-              email: user.email ?? "",
-              full_name: user.displayName ?? user.email?.split("@")[0] ?? "Team Member",
-              avatar_url: user.photoURL ?? "",
-              updated_at: new Date().toISOString(),
-            },
-            { merge: true },
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+      if (error) {
+        const code = (error as { code?: string }).code;
+        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+          toast.info("Google sign-in was cancelled.");
+        } else if (code === "auth/popup-blocked") {
+          toast.error(
+            "Popup was blocked by your browser. Please allow popups or use email sign in.",
           );
-          if (user.email) {
-            const emailId = user.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-            const emailDoc = doc(db, "allowed_emails", emailId);
-            await setDoc(
-              emailDoc,
-              {
-                id: emailId,
-                email: user.email.toLowerCase(),
-                note: "Company Google Account",
-                created_at: new Date().toISOString(),
-              },
-              { merge: true },
-            );
-          }
-        } catch (e) {
-          console.warn("Profile sync warning:", e);
+        } else {
+          toast.error(error.message);
         }
-        toast.success(`Signed in as ${user.displayName || user.email}`);
-        navigate({ to: "/dashboard", replace: true });
-      }
-    } catch (err: unknown) {
-      setBusy(false);
-      const code = (err as { code?: string })?.code;
-      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-        toast.info("Google sign-in was cancelled.");
         return;
       }
-      if (code === "auth/popup-blocked") {
-        toast.error("Popup was blocked by your browser. Please allow popups or use email sign in.");
-        return;
-      }
-      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+      toast.success(`Signed in as ${data?.user.displayName || data?.user.email}`);
+      navigate({ to: "/dashboard", replace: true });
     } finally {
       setBusy(false);
     }
@@ -163,7 +132,7 @@ function AuthPage() {
           </p>
         </div>
         <p className="font-mono text-[11px] tracking-wide text-sidebar-foreground/40 uppercase">
-          Internal tool — company Google accounts enabled
+          Internal tool — authorized team members only
         </p>
       </div>
 
@@ -171,7 +140,7 @@ function AuthPage() {
         <div className="w-full max-w-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Sign in with your company Google account to access the workspace.
+            Sign in with your approved company account to access the workspace.
           </p>
 
           <div className="mt-6">
@@ -228,35 +197,8 @@ function AuthPage() {
             </Button>
           </form>
 
-          <div className="mt-4 pt-3 border-t border-border/50 text-center">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs text-muted-foreground hover:text-foreground"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const { error } = await supabase.auth.signInWithPassword({
-                    email: "team@thymecare.com",
-                    password: "CompanyPassword123!",
-                  });
-                  if (error) throw error;
-                  navigate({ to: "/dashboard", replace: true });
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Quick access failed");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Instant Team Demo Access (team@thymecare.com)
-            </Button>
-          </div>
-
           <p className="mt-4 text-center text-[12px] text-muted-foreground">
-            Any team member with a company Google account or work email receives immediate access.
+            Access is limited to approved team accounts. Ask an administrator to approve your email.
           </p>
         </div>
       </div>

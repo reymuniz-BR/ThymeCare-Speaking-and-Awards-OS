@@ -1,25 +1,45 @@
 # Security Specification & Test Plan
 
-## 1. Data Invariants
+## 1. Access model
 
-- Only authenticated users can read or write data in the system.
-- User profiles at `/profiles/{userId}` are strictly owned by the corresponding `request.auth.uid`.
-- Opportunities and Submissions can only be written by authenticated users with verified email/session.
-- Documents enforce maximum field size limits to prevent Denial of Wallet attacks.
-- Document IDs must match standard alphanumeric character sets (`isValidId`).
-- System-level role fields cannot be escalated by unauthorized clients.
+| Role | Definition | Can |
+| --- | --- | --- |
+| Anyone signed in | Any Firebase account | Ask whether their own address is on the allowlist (`allowed_emails/{their email}`). Nothing else. |
+| Team member | Verified email with a document at `allowed_emails/{lowercase email}` | Read all program data; create and edit program data; read/write their own notifications and saved views; create their own profile. |
+| Manager | Team member with `user_roles/{uid}.role == 'manager'` | Everything a team member can, plus delete program data and edit taxonomy options. |
+| Admin | Team member with `user_roles/{uid}.role == 'admin'` | Everything a manager can, plus add/remove allowlist entries and write `user_roles`. |
+| Server | Admin SDK (server functions after a verified team-member token, scheduled hooks after a verified secret, the seed script) | Bypasses rules. |
 
-## 2. The Dirty Dozen Test Payloads
+Signing in never grants access. The first admin is seeded out-of-band (see README, "Access control & bootstrap").
 
-1. **Unauthenticated Read**: Attempting to read `/opportunities` without `request.auth`.
-2. **Unauthenticated Write**: Attempting to create an opportunity anonymously.
-3. **Profile Spoofing**: User A attempting to write `/profiles/userB`.
-4. **ID Injection Attack**: Writing to an invalid path with junk characters like `/opportunities/../../../etc/passwd`.
-5. **Denial of Wallet (Payload Bloat)**: Sending a 10MB string payload in `description`.
-6. **Shadow Field Injection**: Adding arbitrary unauthorized root fields to a submission.
-7. **Role Escalation Attack**: Normal user attempting to update their profile role to `admin`.
-8. **Orphaned Record Creation**: Submitting answers to non-existent submission IDs.
-9. **Tampering with Immutable Timestamps**: Overwriting `created_at` with a forged future timestamp.
-10. **Cross-Tenant Notification Access**: User A attempting to read `/notifications` intended for User B.
-11. **Malicious Script in Bio**: XSS script tag injection in speaker bios.
-12. **Audit Log Erasure**: Any user attempting to delete from `/activity_log`.
+## 2. Data invariants
+
+- Team membership is decided by the allowlist document, not by the client. The client never writes `allowed_emails` or `user_roles` unless it is an admin.
+- Email/password accounts must have a verified email to count as team members.
+- `profiles/{uid}` belongs to its user: create/update only by that user, only whitelisted fields, email must match the token.
+- `notifications` and `saved_views` are private to `user_id`; creating one for someone else is denied.
+- `activity_log` is append-only and attributed to the caller (`actor_id == uid`).
+- `monitoring_checks` are append-only for clients.
+- `job_secrets`, `webhook_runs`, `email_digest_log`, `integration_tokens` are server-only: every client read and write is denied.
+- Document IDs satisfy `isValidId` (alphanumeric, `_`, `-`, at most 256 chars); `allowed_emails` IDs are the lowercase address.
+
+## 3. The Dirty Dozen test payloads (all must be denied)
+
+1. **Unauthenticated read** of `/opportunities`.
+2. **Unauthenticated write** creating an opportunity.
+3. **Signed-in stranger**: a verified account not on the allowlist reads `/opportunities` or `/profiles`.
+4. **Self-approval**: that stranger writes `/allowed_emails/<their email>`.
+5. **Role escalation**: a team member writes `/user_roles/<their uid>` with `role: 'admin'`, or adds `role` to their profile.
+6. **Unverified password account**: registers an allowlisted address with a password (email not verified) and reads data.
+7. **Profile spoofing**: user A writes `/profiles/<user B uid>`, or edits their own `email`.
+8. **ID injection**: creating a document whose ID contains `/`, `..`, or characters outside the allowed set.
+9. **Cross-user notification access**: user A reads, updates or deletes user B's `/notifications` or `/saved_views`; or creates one with B's `user_id`.
+10. **Audit-log tampering**: any client updates or deletes `/activity_log`, or creates an entry with another user's `actor_id`.
+11. **Secret exfiltration**: any client (including admins) reads `/job_secrets`, `/webhook_runs`, `/email_digest_log` or `/integration_tokens`.
+12. **Privilege on delete**: a plain team member (not manager/admin) deletes program data or edits `taxonomy_options`.
+
+## 4. Server-side checks
+
+- Server functions (`requireSupabaseAuth`) reject with 401 when the Bearer token is missing or invalid, and 403 when the verified email is not on the allowlist.
+- Scheduled hooks (`/api/public/hooks/*`) return 503 when no secret is configured, 401 when the presented secret is missing or wrong. Scheduler-identifying headers (`x-cloudscheduler`, `User-Agent`) are never accepted as credentials.
+- `/api/public/calendar-feed` requires `?token=` matching `job_secrets/calendar-feed`; 503 when unset.

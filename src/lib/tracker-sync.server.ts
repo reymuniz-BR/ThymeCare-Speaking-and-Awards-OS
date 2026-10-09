@@ -1,3 +1,4 @@
+import type { AppDb } from "@/integrations/supabase/firestore/builder";
 /**
  * Reads the client's master "Speaking and Awards Grid" workbook out of Google
  * Drive and turns it into normalised rows the operating system can diff
@@ -323,9 +324,14 @@ function dedupe(rows: Mapped[]): Mapped[] {
  * rows are created, and every field-level change is written to the activity log.
  * Rows only in the app are reported, never deleted.
  */
-export async function syncTrackerGrid(opts: { dryRun?: boolean } = {}): Promise<TrackerSyncResult> {
+export async function syncTrackerGrid(
+  opts: { dryRun?: boolean; db?: AppDb } = {},
+): Promise<TrackerSyncResult> {
   const dryRun = opts.dryRun ?? false;
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Server functions pass their per-request client (so audit rows name the user);
+  // the scheduled hook runs without one.
+  const supabaseAdmin =
+    opts.db ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
   const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
   if (!driveKey) {
