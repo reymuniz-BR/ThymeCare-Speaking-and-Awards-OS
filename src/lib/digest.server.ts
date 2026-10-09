@@ -41,7 +41,7 @@ export type DigestRunResult = {
 
 function appUrl(): string {
   return (
-    process.env["APP_URL"] ?? "https://project--2183e766-3a7e-4b5f-965b-a450428b6dfe.lovable.app"
+    process.env["APP_URL"] ?? "https://ais-dev-z53f7or2rcvfol4alxwyeu-693915527211.us-west2.run.app"
   );
 }
 

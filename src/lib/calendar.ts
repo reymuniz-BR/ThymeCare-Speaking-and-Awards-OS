@@ -103,7 +103,11 @@ function addDays(iso: string, days: number): string {
 }
 
 function escapeIcs(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
 }
 
 function fold(line: string): string {
@@ -137,7 +141,10 @@ export function toVEvent(e: CalendarEvent, now = new Date()): string[] {
     const end = new Date(start.getTime() + 30 * 60000);
     lines.push(`DTSTART:${stampUtc(start)}`, `DTEND:${stampUtc(end)}`);
   } else {
-    lines.push(`DTSTART;VALUE=DATE:${stampDate(e.date)}`, `DTEND;VALUE=DATE:${stampDate(addDays(e.date, 1))}`);
+    lines.push(
+      `DTSTART;VALUE=DATE:${stampDate(e.date)}`,
+      `DTEND;VALUE=DATE:${stampDate(addDays(e.date, 1))}`,
+    );
   }
   lines.push(`SUMMARY:${escapeIcs(e.title)}`);
   if (e.description) lines.push(`DESCRIPTION:${escapeIcs(e.description)}`);
@@ -155,7 +162,10 @@ export function toVEvent(e: CalendarEvent, now = new Date()): string[] {
   return lines;
 }
 
-export function buildIcs(events: CalendarEvent[], calendarName = "Thyme Care Program Dates"): string {
+export function buildIcs(
+  events: CalendarEvent[],
+  calendarName = "Thyme Care Program Dates",
+): string {
   const now = new Date();
   const lines = [
     "BEGIN:VCALENDAR",

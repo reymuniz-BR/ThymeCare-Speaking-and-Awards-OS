@@ -130,7 +130,12 @@ export async function cloneToNextCycle(opportunityId: string): Promise<CloneResu
 
   // Record both cycles so the two editions read as one programme over time.
   await supabase.from("opportunity_cycles").insert([
-    { opportunity_id: opportunityId, year: priorYear, label: `${priorYear} cycle`, is_current: false },
+    {
+      opportunity_id: opportunityId,
+      year: priorYear,
+      label: `${priorYear} cycle`,
+      is_current: false,
+    },
     { opportunity_id: newId, year: nextYear, label: `${nextYear} cycle`, is_current: true },
   ] as never);
 

@@ -41,7 +41,6 @@ export function budgetSummary(rows: BudgetRow[]) {
   return { awaitingCount: awaiting.length };
 }
 
-
 type CsvRow = {
   name: string;
   type: string;

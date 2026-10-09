@@ -1,0 +1,5 @@
+{
+  "name": "Thyme Care Speaking and Awards OS",
+  "description": "Central operating system for tracking speaking opportunities, conferences, awards, and submissions.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

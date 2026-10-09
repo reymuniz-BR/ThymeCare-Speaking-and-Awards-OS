@@ -126,8 +126,6 @@ function OpportunityDetail() {
     };
   }
 
-
-
   async function save() {
     setSaving(true);
     const payload: Draft = {};
@@ -212,8 +210,7 @@ function OpportunityDetail() {
               disabled={cloning}
               onClick={cloneCycle}
             >
-              <CopyPlus className="h-3.5 w-3.5" />{" "}
-              {cloning ? "Cloning…" : "Clone to next cycle"}
+              <CopyPlus className="h-3.5 w-3.5" /> {cloning ? "Cloning…" : "Clone to next cycle"}
             </Button>
           ) : null}
           <Button size="sm" className="h-8" onClick={startSubmission}>
@@ -332,7 +329,6 @@ function OpportunityDetail() {
                     />
                   </Field>
                   <Field label="Client approval">
-
                     <NativeSelect
                       value={String(val("client_approval") || "needs_approval")}
                       onChange={(v) => set("client_approval", v)}
@@ -631,11 +627,7 @@ function OpportunityDetail() {
                 label="Early deadline"
                 date={record["early_deadline"] as string | null}
                 timeLabel={cutoffLabel}
-                event={dateEvent(
-                  "Early deadline",
-                  record["early_deadline"] as string | null,
-                  true,
-                )}
+                event={dateEvent("Early deadline", record["early_deadline"] as string | null, true)}
               />
               <DateRow
                 label="Final deadline"
@@ -646,7 +638,10 @@ function OpportunityDetail() {
               <DateRow
                 label="Internal draft"
                 date={record["internal_draft_due"] as string | null}
-                event={dateEvent("Internal draft due", record["internal_draft_due"] as string | null)}
+                event={dateEvent(
+                  "Internal draft due",
+                  record["internal_draft_due"] as string | null,
+                )}
               />
               <DateRow
                 label="Client review"

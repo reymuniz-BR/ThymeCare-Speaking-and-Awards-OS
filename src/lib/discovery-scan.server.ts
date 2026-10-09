@@ -73,8 +73,12 @@ export async function runDiscoveryScan(args: ScanArgs): Promise<ScanResult> {
 
   const aiModel = activeModel();
   const rows: Record<string, unknown>[] = [];
-  const accepted: { id: string; name: string; url: string | null; application_url: string | null }[] =
-    [];
+  const accepted: {
+    id: string;
+    name: string;
+    url: string | null;
+    application_url: string | null;
+  }[] = [];
   let suppressed = 0;
   let flagged = 0;
   let belowThreshold = 0;

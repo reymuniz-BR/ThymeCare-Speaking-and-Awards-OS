@@ -55,7 +55,13 @@ export function MasterMessagingPanel() {
               ? `${sections.length} sections · updated ${formatDate(sections[0]?.updated_at ?? null)}`
               : "Not pulled yet"}
         </span>
-        <Button variant="outline" size="sm" className="h-7 text-[12px]" disabled={syncing} onClick={sync}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-[12px]"
+          disabled={syncing}
+          onClick={sync}
+        >
           <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "Pulling…" : "Pull latest"}
         </Button>

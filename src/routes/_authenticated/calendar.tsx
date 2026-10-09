@@ -88,7 +88,7 @@ function milestoneEvent(
     uid: `${id}@thymecare-awards-os`,
     title: `${KIND_TITLE[kind] ?? labelize(kind)}: ${o.name}`,
     date,
-    time: timed ? ((o.deadline_time ?? "").slice(0, 5) || null) : null,
+    time: timed ? (o.deadline_time ?? "").slice(0, 5) || null : null,
     timeZone: o.deadline_timezone ?? DEFAULT_TIMEZONE,
     description: link,
     url: link,

@@ -22,7 +22,7 @@ type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["su
 
 function appUrl(): string {
   return (
-    process.env["APP_URL"] ?? "https://project--2183e766-3a7e-4b5f-965b-a450428b6dfe.lovable.app"
+    process.env["APP_URL"] ?? "https://ais-dev-z53f7or2rcvfol4alxwyeu-693915527211.us-west2.run.app"
   );
 }
 
@@ -31,8 +31,16 @@ function appUrl(): string {
  * otherwise everyone with a role on the program gets it.
  */
 export async function discoverRecipients(db: Admin): Promise<string[]> {
-  const alias = (process.env["DISCOVER_ALIAS_EMAIL"] ?? process.env["TEAM_ALIAS_EMAIL"] ?? "").trim();
-  if (alias) return alias.split(",").map((a) => a.trim()).filter(Boolean);
+  const alias = (
+    process.env["DISCOVER_ALIAS_EMAIL"] ??
+    process.env["TEAM_ALIAS_EMAIL"] ??
+    ""
+  ).trim();
+  if (alias)
+    return alias
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
 
   const { data: roles, error: roleError } = await db.from("user_roles").select("user_id");
   if (roleError) throw new Error(roleError.message);
@@ -115,12 +123,7 @@ export async function sendDiscoverEmail(args: {
   if (!recipients.length) return result;
 
   const key = `discover-${weekStart(args.now ?? new Date())}`;
-  const { subject, text } = renderDiscoverEmail(
-    args.brief,
-    candidates,
-    args.suppressed,
-    appUrl(),
-  );
+  const { subject, text } = renderDiscoverEmail(args.brief, candidates, args.suppressed, appUrl());
 
   for (const recipient of recipients) {
     const { error: claimError } = await db.from("email_digest_log").insert({

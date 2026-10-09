@@ -1,0 +1,204 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User Profiles
+    match /profiles/{userId} {
+      allow read: if isSignedIn() && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if isOwner(userId) && isValidId(userId);
+      allow delete: if false;
+    }
+
+    // Allowed Emails & Pre-approvals
+    match /allowed_emails/{emailId} {
+      allow read: if isSignedIn() && isValidId(emailId);
+      allow create, update: if isSignedIn() && isValidId(emailId);
+      allow delete: if isSignedIn() && isValidId(emailId);
+    }
+
+    // Opportunities
+    match /opportunities/{opportunityId} {
+      allow read: if isSignedIn() && isValidId(opportunityId);
+      allow create: if isSignedIn() && isValidId(opportunityId);
+      allow update: if isSignedIn() && isValidId(opportunityId);
+      allow delete: if isSignedIn() && isValidId(opportunityId);
+    }
+
+    // Opportunity Dates
+    match /opportunity_dates/{dateId} {
+      allow read: if isSignedIn() && isValidId(dateId);
+      allow create, update, delete: if isSignedIn() && isValidId(dateId);
+    }
+
+    // Opportunity Cycles
+    match /opportunity_cycles/{cycleId} {
+      allow read: if isSignedIn() && isValidId(cycleId);
+      allow create, update, delete: if isSignedIn() && isValidId(cycleId);
+    }
+
+    // Opportunity Changes (diff tracking)
+    match /opportunity_changes/{changeId} {
+      allow read: if isSignedIn() && isValidId(changeId);
+      allow create, update, delete: if isSignedIn() && isValidId(changeId);
+    }
+
+    // Submissions
+    match /submissions/{submissionId} {
+      allow read: if isSignedIn() && isValidId(submissionId);
+      allow create: if isSignedIn() && isValidId(submissionId);
+      allow update: if isSignedIn() && isValidId(submissionId);
+      allow delete: if isSignedIn() && isValidId(submissionId);
+    }
+
+    // Submission Fields
+    match /submission_fields/{fieldId} {
+      allow read: if isSignedIn() && isValidId(fieldId);
+      allow create: if isSignedIn() && isValidId(fieldId);
+      allow update: if isSignedIn() && isValidId(fieldId);
+      allow delete: if isSignedIn() && isValidId(fieldId);
+    }
+
+    // Submission Speakers
+    match /submission_speakers/{subSpeakerId} {
+      allow read: if isSignedIn() && isValidId(subSpeakerId);
+      allow create, update, delete: if isSignedIn() && isValidId(subSpeakerId);
+    }
+
+    // Submission Briefs
+    match /submission_briefs/{briefId} {
+      allow read: if isSignedIn() && isValidId(briefId);
+      allow create, update, delete: if isSignedIn() && isValidId(briefId);
+    }
+
+    // Submission Answer Versions
+    match /submission_answer_versions/{versionId} {
+      allow read: if isSignedIn() && isValidId(versionId);
+      allow create, update, delete: if isSignedIn() && isValidId(versionId);
+    }
+
+    // Brief Items
+    match /brief_items/{itemId} {
+      allow read: if isSignedIn() && isValidId(itemId);
+      allow create, update, delete: if isSignedIn() && isValidId(itemId);
+    }
+
+    // Proof Points Bank
+    match /proof_points/{proofPointId} {
+      allow read: if isSignedIn() && isValidId(proofPointId);
+      allow create: if isSignedIn() && isValidId(proofPointId);
+      allow update: if isSignedIn() && isValidId(proofPointId);
+      allow delete: if isSignedIn() && isValidId(proofPointId);
+    }
+
+    // Content Assets (Google Drive synced)
+    match /content_assets/{assetId} {
+      allow read: if isSignedIn() && isValidId(assetId);
+      allow create: if isSignedIn() && isValidId(assetId);
+      allow update: if isSignedIn() && isValidId(assetId);
+      allow delete: if isSignedIn() && isValidId(assetId);
+    }
+
+    // Content Snippets
+    match /content_snippets/{snippetId} {
+      allow read: if isSignedIn() && isValidId(snippetId);
+      allow create: if isSignedIn() && isValidId(snippetId);
+      allow update: if isSignedIn() && isValidId(snippetId);
+      allow delete: if isSignedIn() && isValidId(snippetId);
+    }
+
+    // Speakers
+    match /speakers/{speakerId} {
+      allow read: if isSignedIn() && isValidId(speakerId);
+      allow create: if isSignedIn() && isValidId(speakerId);
+      allow update: if isSignedIn() && isValidId(speakerId);
+      allow delete: if isSignedIn() && isValidId(speakerId);
+    }
+
+    // Discoveries (AI scan and candidate opportunities)
+    match /discoveries/{discoveryId} {
+      allow read: if isSignedIn() && isValidId(discoveryId);
+      allow create, update, delete: if isSignedIn() && isValidId(discoveryId);
+    }
+
+    // Monitoring Checks
+    match /monitoring_checks/{checkId} {
+      allow read: if isSignedIn() && isValidId(checkId);
+      allow create, update, delete: if isSignedIn() && isValidId(checkId);
+    }
+
+    // Saved Views
+    match /saved_views/{viewId} {
+      allow read: if isSignedIn() && isValidId(viewId);
+      allow create, update, delete: if isSignedIn() && isValidId(viewId);
+    }
+
+    // User Roles
+    match /user_roles/{roleId} {
+      allow read: if isSignedIn() && isValidId(roleId);
+      allow create, update, delete: if isSignedIn() && isValidId(roleId);
+    }
+
+    // Activity Log
+    match /activity_log/{logId} {
+      allow read: if isSignedIn() && isValidId(logId);
+      allow create: if isSignedIn() && isValidId(logId);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(notificationId);
+      allow update: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
+    }
+
+    // Taxonomy Options
+    match /taxonomy_options/{optionId} {
+      allow read: if isSignedIn() && isValidId(optionId);
+      allow create: if isSignedIn() && isValidId(optionId);
+      allow update: if isSignedIn() && isValidId(optionId);
+      allow delete: if isSignedIn() && isValidId(optionId);
+    }
+
+    // Email Digest Log
+    match /email_digest_log/{logId} {
+      allow read: if isSignedIn() && isValidId(logId);
+      allow create, update, delete: if isSignedIn() && isValidId(logId);
+    }
+
+    // Job Secrets & Webhook Runs
+    match /job_secrets/{secretId} {
+      allow read, write: if isSignedIn() && isValidId(secretId);
+    }
+
+    match /webhook_runs/{runId} {
+      allow read, write: if isSignedIn() && isValidId(runId);
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

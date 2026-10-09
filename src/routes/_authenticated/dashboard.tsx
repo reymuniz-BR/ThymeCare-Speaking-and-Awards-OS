@@ -168,8 +168,6 @@ function HomePage() {
         />
       </div>
 
-
-
       {/* Operating area */}
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Panel

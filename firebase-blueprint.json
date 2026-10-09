@@ -1,0 +1,222 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with display name and role",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "User email address" },
+        "display_name": { "type": "string", "description": "User display name" },
+        "avatar_url": { "type": "string", "description": "Profile picture URL" },
+        "role": { "type": "string", "description": "User role: member, manager, admin" },
+        "created_at": { "type": "string", "description": "ISO timestamp of creation" },
+        "updated_at": { "type": "string", "description": "ISO timestamp of last update" }
+      },
+      "required": ["email", "role"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "Speaking or award opportunity record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Opportunity name" },
+        "type": { "type": "string", "description": "award or speaking" },
+        "organizer": { "type": "string", "description": "Host organization" },
+        "category": { "type": "string", "description": "Category or topic" },
+        "status": { "type": "string", "description": "Current tracking status" },
+        "client_approval": { "type": "string", "description": "Client approval status" },
+        "url": { "type": "string", "description": "Event URL" },
+        "application_url": { "type": "string", "description": "Submission portal URL" },
+        "event_date": { "type": "string", "description": "Date of event" },
+        "final_deadline": { "type": "string", "description": "Final submission deadline" },
+        "early_deadline": { "type": "string", "description": "Early bird deadline" },
+        "internal_draft_due": { "type": "string", "description": "Internal draft deadline" },
+        "location": { "type": "string", "description": "Location or city" },
+        "region": { "type": "string", "description": "Geographic region" },
+        "audience": { "type": "string", "description": "Target audience" },
+        "description": { "type": "string", "description": "Opportunity overview" },
+        "tier": { "type": "string", "description": "Priority tier: Tier 1, Tier 2, etc." },
+        "owner_id": { "type": "string", "description": "Assigned team member user ID" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["name", "type"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Application draft and submission tracking",
+      "type": "object",
+      "properties": {
+        "opportunity_id": { "type": "string", "description": "Linked opportunity ID" },
+        "title": { "type": "string", "description": "Working submission title" },
+        "stage": {
+          "type": "string",
+          "description": "Workflow stage: drafting, in_review, submitted, won, lost"
+        },
+        "owner_id": { "type": "string", "description": "Lead author user ID" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["opportunity_id", "title"]
+    },
+    "SubmissionField": {
+      "title": "SubmissionField",
+      "description": "Individual question and answer field for a submission",
+      "type": "object",
+      "properties": {
+        "submission_id": { "type": "string", "description": "Linked submission ID" },
+        "prompt": { "type": "string", "description": "Application question prompt" },
+        "answer": { "type": "string", "description": "Drafted response text" },
+        "word_count": { "type": "number", "description": "Word count limit or current count" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["submission_id", "prompt"]
+    },
+    "ProofPoint": {
+      "title": "ProofPoint",
+      "description": "Canonical proof point, stat, or approved claim",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Proof point headline" },
+        "kind": { "type": "string", "description": "metric, testimonial, award, case_study" },
+        "content": { "type": "string", "description": "Body text of proof point" },
+        "theme": { "type": "string", "description": "Strategic theme" },
+        "executive_name": { "type": "string", "description": "Attributed executive" },
+        "source": { "type": "string", "description": "Source publication or report" },
+        "source_url": { "type": "string", "description": "URL to source" },
+        "approved": { "type": "boolean", "description": "Whether approved for public submissions" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["title", "content"]
+    },
+    "ContentAsset": {
+      "title": "ContentAsset",
+      "description": "Google Drive collateral asset reference",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "File name" },
+        "category": { "type": "string", "description": "Asset category" },
+        "summary": { "type": "string", "description": "AI summary of content" },
+        "extracted_text": { "type": "string", "description": "Extracted document text" },
+        "web_view_link": { "type": "string", "description": "Google Drive web view link" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["name"]
+    },
+    "ContentSnippet": {
+      "title": "ContentSnippet",
+      "description": "Reusable approved messaging snippet",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Snippet title" },
+        "body": { "type": "string", "description": "Snippet body" },
+        "category": { "type": "string", "description": "Snippet category" },
+        "updated_at": { "type": "string", "description": "ISO timestamp updated" }
+      },
+      "required": ["title", "body"]
+    },
+    "Speaker": {
+      "title": "Speaker",
+      "description": "Executive speaker bio and credentials",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name" },
+        "title": { "type": "string", "description": "Job title" },
+        "bio": { "type": "string", "description": "Professional bio" },
+        "headshot_url": { "type": "string", "description": "Photo URL" },
+        "topics": { "type": "string", "description": "Expertise topics" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" }
+      },
+      "required": ["name", "title"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit and activity trail event",
+      "type": "object",
+      "properties": {
+        "actor_id": { "type": "string", "description": "User ID of actor" },
+        "action": { "type": "string", "description": "Action performed" },
+        "entity_type": { "type": "string", "description": "Target entity type" },
+        "entity_id": { "type": "string", "description": "Target entity ID" },
+        "summary": { "type": "string", "description": "Human-readable change summary" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" }
+      },
+      "required": ["action", "entity_type"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app notification for deadline or status change",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Recipient user ID" },
+        "title": { "type": "string", "description": "Notification title" },
+        "message": { "type": "string", "description": "Notification message" },
+        "type": { "type": "string", "description": "Notification type" },
+        "read": { "type": "boolean", "description": "Read flag" },
+        "created_at": { "type": "string", "description": "ISO timestamp created" }
+      },
+      "required": ["user_id", "title"]
+    },
+    "TaxonomyOption": {
+      "title": "TaxonomyOption",
+      "description": "Customizable taxonomy dropdown option",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "description": "category, tier, region, status" },
+        "value": { "type": "string", "description": "Option value code" },
+        "label": { "type": "string", "description": "Human-readable label" },
+        "is_active": { "type": "boolean", "description": "Active state" },
+        "sort_order": { "type": "number", "description": "Display order" }
+      },
+      "required": ["kind", "value", "label"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile collection keyed by Firebase Auth UID"
+    },
+    "/opportunities/{opportunityId}": {
+      "schema": "Opportunity",
+      "description": "Conferences, awards, and speaking opportunities"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Applications submitted to opportunities"
+    },
+    "/submission_fields/{fieldId}": {
+      "schema": "SubmissionField",
+      "description": "Questions and draft answers for a submission"
+    },
+    "/proof_points/{proofPointId}": {
+      "schema": "ProofPoint",
+      "description": "Verified claims and proof bank"
+    },
+    "/content_assets/{assetId}": {
+      "schema": "ContentAsset",
+      "description": "Google Drive synced content items"
+    },
+    "/content_snippets/{snippetId}": {
+      "schema": "ContentSnippet",
+      "description": "Approved boilerplate messages and snippets"
+    },
+    "/speakers/{speakerId}": {
+      "schema": "Speaker",
+      "description": "Executive speaker profiles"
+    },
+    "/activity_log/{logId}": {
+      "schema": "ActivityLog",
+      "description": "System and user action log"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
+    },
+    "/taxonomy_options/{optionId}": {
+      "schema": "TaxonomyOption",
+      "description": "App taxonomy options"
+    }
+  }
+}

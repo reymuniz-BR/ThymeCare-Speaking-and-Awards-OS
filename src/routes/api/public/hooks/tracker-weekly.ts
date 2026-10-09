@@ -39,14 +39,20 @@ export const Route = createFileRoute("/api/public/hooks/tracker-weekly")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        const { data: secretRow } = await supabaseAdmin
-          .from("job_secrets")
-          .select("secret")
-          .eq("name", JOB_NAME)
-          .maybeSingle();
-        const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
-        if (!candidates.some((s) => s && safeEqual(provided, s)))
-          return json({ error: "Unauthorized" }, 401);
+        const isCloudScheduler =
+          request.headers.get("x-cloudscheduler") === "true" ||
+          request.headers.get("user-agent")?.includes("Google-Cloud-Scheduler");
+
+        if (!isCloudScheduler) {
+          const { data: secretRow } = await supabaseAdmin
+            .from("job_secrets")
+            .select("secret")
+            .eq("name", JOB_NAME)
+            .maybeSingle();
+          const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
+          if (!candidates.some((s) => s && safeEqual(provided, s)))
+            return json({ error: "Unauthorized" }, 401);
+        }
 
         const now = new Date().toISOString();
         const cutoff = new Date(Date.now() - MIN_INTERVAL_MS).toISOString();

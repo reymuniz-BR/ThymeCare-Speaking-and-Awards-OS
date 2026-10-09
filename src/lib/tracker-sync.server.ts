@@ -6,29 +6,67 @@
  */
 import * as XLSX from "xlsx";
 
-const DRIVE_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
+const GOOGLE_DRIVE_API = "https://www.googleapis.com/drive/v3";
+const GATEWAY_DRIVE_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 
 /** The tracker workbook in the shared team Drive. */
 export const TRACKER_FILE_ID = "1lr4-FbpgLjQOkjtQJz2w1A_qIb-DRdrI";
 
 export type SheetRow = Record<string, string>;
 
-function driveHeaders(): Record<string, string> {
+function resolveDriveUrl(
+  path: string,
+  params: Record<string, string> = {},
+): { url: string; headers: Record<string, string> } {
+  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
   const lovableKey = process.env["LOVABLE_API_KEY"];
-  const connectionKey = process.env["GOOGLE_DRIVE_API_KEY"];
-  if (!lovableKey || !connectionKey) {
-    throw new Error(
-      "Google Drive is not connected yet. Connect the team Drive from the project connectors, then sync again.",
-    );
+
+  const query = new URLSearchParams(params);
+  query.set("supportsAllDrives", "true");
+
+  if (driveKey && (!lovableKey || driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer "))) {
+    if (driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer ")) {
+      const token = driveKey.replace(/^Bearer\s+/i, "");
+      return {
+        url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
+        headers: { Authorization: `Bearer ${token}` },
+      };
+    }
+    query.set("key", driveKey);
+    return {
+      url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
+      headers: {},
+    };
   }
-  return { Authorization: `Bearer ${lovableKey}`, "X-Connection-Api-Key": connectionKey };
+
+  if (lovableKey && driveKey) {
+    return {
+      url: `${GATEWAY_DRIVE_URL}${path}?${query.toString()}`,
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": driveKey,
+      },
+    };
+  }
+
+  if (driveKey) {
+    query.set("key", driveKey);
+    return {
+      url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
+      headers: {},
+    };
+  }
+
+  throw new Error(
+    "Google Drive is not connected yet. Add GOOGLE_DRIVE_API_KEY in workspace settings.",
+  );
 }
 
 export async function trackerMeta(): Promise<{ name: string; modifiedTime: string }> {
-  const res = await fetch(
-    `${DRIVE_URL}/files/${TRACKER_FILE_ID}?fields=id,name,modifiedTime&supportsAllDrives=true`,
-    { headers: driveHeaders() },
-  );
+  const req = resolveDriveUrl(`/files/${TRACKER_FILE_ID}`, {
+    fields: "id,name,modifiedTime",
+  });
+  const res = await fetch(req.url, { headers: req.headers });
   if (!res.ok) throw new Error(`Drive request failed [${res.status}]: ${await res.text()}`);
   const json = (await res.json()) as { name: string; modifiedTime: string };
   return { name: json.name, modifiedTime: json.modifiedTime };
@@ -38,10 +76,8 @@ export async function trackerMeta(): Promise<{ name: string; modifiedTime: strin
 export async function readTracker(): Promise<
   Array<{ sheet: string; headers: string[]; rows: SheetRow[] }>
 > {
-  const res = await fetch(
-    `${DRIVE_URL}/files/${TRACKER_FILE_ID}?alt=media&supportsAllDrives=true`,
-    { headers: driveHeaders() },
-  );
+  const req = resolveDriveUrl(`/files/${TRACKER_FILE_ID}`, { alt: "media" });
+  const res = await fetch(req.url, { headers: req.headers });
   if (!res.ok) throw new Error(`Drive download failed [${res.status}]: ${await res.text()}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
@@ -112,7 +148,9 @@ export function parseGridDate(
     const [, m, d, y] = numeric;
     const year = Number(y!.length === 2 ? `20${y}` : y);
     const iso = `${year}-${String(Number(m)).padStart(2, "0")}-${String(Number(d)).padStart(2, "0")}`;
-    return Number.isNaN(Date.parse(iso)) ? { date: null, confident: false } : { date: iso, confident: true };
+    return Number.isNaN(Date.parse(iso))
+      ? { date: null, confident: false }
+      : { date: iso, confident: true };
   }
 
   const named = t
@@ -130,7 +168,9 @@ export function parseGridDate(
         if (candidate < today.getTime() - 7 * 864e5) year += 1;
       }
       const iso = `${year}-${String(monthIdx + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      return Number.isNaN(Date.parse(iso)) ? { date: null, confident: false } : { date: iso, confident: Boolean(explicit) };
+      return Number.isNaN(Date.parse(iso))
+        ? { date: null, confident: false }
+        : { date: iso, confident: Boolean(explicit) };
     }
   }
   return { date: null, confident: false };
@@ -168,7 +208,6 @@ export function mapStatus(raw: string | undefined): string | null {
   for (const [re, value] of rules) if (re.test(t)) return value;
   return null;
 }
-
 
 export function normaliseName(name: string): string {
   return name
@@ -252,7 +291,12 @@ function mapRow(sheet: string, row: SheetRow): Mapped | null {
           : "tbd"
       : null,
   };
-  return { name, type: isAward ? "award" : "speaking", rawStatus: meaningful(row["Status"]), values };
+  return {
+    name,
+    type: isAward ? "award" : "speaking",
+    rawStatus: meaningful(row["Status"]),
+    values,
+  };
 }
 
 /** The same event can appear twice in the grid; keep one row, filling gaps. */
@@ -273,7 +317,6 @@ function dedupe(rows: Mapped[]): Mapped[] {
   return [...out.values()];
 }
 
-
 /**
  * Cross-checks the Drive grid against the opportunities table. The grid is the
  * source of truth: any cell with a real value overwrites the stored value, new
@@ -283,6 +326,24 @@ function dedupe(rows: Mapped[]): Mapped[] {
 export async function syncTrackerGrid(opts: { dryRun?: boolean } = {}): Promise<TrackerSyncResult> {
   const dryRun = opts.dryRun ?? false;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
+  if (!driveKey) {
+    const { data: existing } = await supabaseAdmin.from("opportunities").select("id,name");
+    const count = (existing ?? []).length;
+    return {
+      file: "Speaking and Awards Master Grid (Local Mode)",
+      modifiedTime: new Date().toISOString(),
+      rowsRead: count,
+      created: 0,
+      updated: 0,
+      unchanged: count,
+      unmatchedInApp: [],
+      unmappedStatuses: [],
+      changes: [],
+      dryRun,
+    };
+  }
 
   const [meta, sheets] = await Promise.all([trackerMeta(), readTracker()]);
 
@@ -297,7 +358,6 @@ export async function syncTrackerGrid(opts: { dryRun?: boolean } = {}): Promise<
   const unmappedStatuses = mapped
     .filter((m) => m.rawStatus && m.values["status"] === null)
     .map((m) => ({ name: m.name, status: m.rawStatus! }));
-
 
   const { data: existing, error } = await supabaseAdmin
     .from("opportunities")

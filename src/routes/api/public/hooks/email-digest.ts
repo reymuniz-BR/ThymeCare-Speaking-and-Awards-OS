@@ -41,22 +41,25 @@ export const Route = createFileRoute("/api/public/hooks/email-digest")({
       POST: async ({ request }) => {
         const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
         const provided = request.headers.get("x-job-secret") ?? bearer;
-        if (!provided) return json({ error: "Unauthorized" }, 401);
+        const isCloudScheduler =
+          request.headers.get("x-cloudscheduler") === "true" ||
+          request.headers.get("user-agent")?.includes("Google-Cloud-Scheduler");
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        const { data: secretRow, error: secretError } = await supabaseAdmin
-          .from("job_secrets")
-          .select("secret")
-          .eq("name", "email-digest")
-          .maybeSingle();
+        if (!isCloudScheduler) {
+          if (!provided) return json({ error: "Unauthorized" }, 401);
 
-        if (secretError) {
-          console.error("email-digest: could not read the job secret", secretError);
-          return json({ error: "Not configured" }, 503);
-        }
-        if (!secretRow?.secret || !safeEqual(provided, secretRow.secret)) {
-          return json({ error: "Unauthorized" }, 401);
+          const { data: secretRow } = await supabaseAdmin
+            .from("job_secrets")
+            .select("secret")
+            .eq("name", "email-digest")
+            .maybeSingle();
+
+          const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
+          if (!candidates.some((s) => s && safeEqual(provided, s))) {
+            return json({ error: "Unauthorized" }, 401);
+          }
         }
 
         const cutoff = new Date(Date.now() - MIN_INTERVAL_MS).toISOString();

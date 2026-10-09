@@ -45,7 +45,13 @@ export function TrackerSyncCard() {
         <TableProperties className="h-3.5 w-3.5 text-muted-foreground" />
         <h2 className="text-[13px] font-semibold">Sync from the master tracker</h2>
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" className="h-8" onClick={() => go(true)} disabled={!!busy}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            onClick={() => go(true)}
+            disabled={!!busy}
+          >
             {busy === "preview" ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (

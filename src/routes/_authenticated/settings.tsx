@@ -4,7 +4,6 @@ import { AppShell } from "@/components/app-shell";
 import { AccessList } from "@/components/access-list";
 import { TrackerSyncCard } from "@/components/tracker-sync-card";
 
-
 import { Chip } from "@/components/chip";
 import { supabase } from "@/integrations/supabase/client";
 import { useInvalidate } from "@/lib/hooks";
@@ -102,7 +101,6 @@ function SettingsPage() {
         <AccessList />
         <TrackerSyncCard />
       </div>
-
 
       <form
         onSubmit={addOption}

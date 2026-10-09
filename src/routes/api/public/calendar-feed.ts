@@ -12,9 +12,8 @@ export const Route = createFileRoute("/api/public/calendar-feed")({
     handlers: {
       GET: async ({ request }) => {
         const token = new URL(request.url).searchParams.get("token") ?? "";
-        const { readFeedToken, safeEqual, buildProgramCalendar } = await import(
-          "@/lib/calendar-feed.server"
-        );
+        const { readFeedToken, safeEqual, buildProgramCalendar } =
+          await import("@/lib/calendar-feed.server");
         const secret = await readFeedToken();
         if (!secret) return new Response("Not configured", { status: 503 });
         if (!token || !safeEqual(token, secret)) {

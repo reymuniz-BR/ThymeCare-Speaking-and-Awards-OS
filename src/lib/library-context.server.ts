@@ -57,8 +57,10 @@ type FieldRow = {
   submissions: { title: string; opportunities: { name: string; type: string } | null } | null;
 };
 
-// The authenticated Supabase client from the auth middleware.
-type Client = { from: (table: string) => any };
+import type { supabase } from "@/integrations/supabase/client";
+
+// The authenticated client from the auth middleware.
+type Client = typeof supabase;
 
 export async function gatherLibrarySources(
   supabase: Client,
@@ -173,10 +175,7 @@ export async function gatherLibrarySources(
     reasons: m.reasons,
   }));
 
-  const sources: BriefSource[] = [
-    ...pinned.map((p, i) => ({ ...p, ref: `S${i + 1}` })),
-    ...ranked,
-  ];
+  const sources: BriefSource[] = [...pinned.map((p, i) => ({ ...p, ref: `S${i + 1}` })), ...ranked];
 
   const sourceBlock = sources.length
     ? sources

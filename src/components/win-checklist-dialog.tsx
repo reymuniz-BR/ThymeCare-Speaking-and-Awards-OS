@@ -103,9 +103,7 @@ export function WinChecklistDialog({
       }
 
       toast.success(
-        createProofPoint
-          ? "Win captured — proof point added pending approval"
-          : "Win captured",
+        createProofPoint ? "Win captured — proof point added pending approval" : "Win captured",
       );
       onSaved?.();
       onOpenChange(false);

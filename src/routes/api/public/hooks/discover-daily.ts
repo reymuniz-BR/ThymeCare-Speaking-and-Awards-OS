@@ -59,26 +59,32 @@ export const Route = createFileRoute("/api/public/hooks/discover-daily")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const header = request.headers.get("x-job-secret") ?? request.headers.get("x-monitor-secret");
+        const header =
+          request.headers.get("x-job-secret") ?? request.headers.get("x-monitor-secret");
         const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
         const provided = header ?? bearer;
-        if (!provided) return json({ error: "Unauthorized" }, 401);
+        const isCloudScheduler =
+          request.headers.get("x-cloudscheduler") === "true" ||
+          request.headers.get("user-agent")?.includes("Google-Cloud-Scheduler");
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        if (!isCloudScheduler) {
+          if (!provided) return json({ error: "Unauthorized" }, 401);
 
-        // Accepted secrets: the stored job secret, or the monitoring webhook secret.
-        const { data: secretRow } = await supabaseAdmin
-          .from("job_secrets")
-          .select("secret")
-          .eq("name", JOB_NAME)
-          .maybeSingle();
-        const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
-        if (!candidates.some((s) => s && safeEqual(provided, s)))
-          return json({ error: "Unauthorized" }, 401);
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+          // Accepted secrets: the stored job secret, or the monitoring webhook secret.
+          const { data: secretRow } = await supabaseAdmin
+            .from("job_secrets")
+            .select("secret")
+            .eq("name", JOB_NAME)
+            .maybeSingle();
+          const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
+          if (!candidates.some((s) => s && safeEqual(provided, s)))
+            return json({ error: "Unauthorized" }, 401);
+        }
 
         const now = new Date().toISOString();
         const cutoff = new Date(Date.now() - MIN_INTERVAL_MS).toISOString();
-
 
         // Single-flight: the update only lands when the last run is old enough.
         const { data: claimed, error: claimError } = await supabaseAdmin

@@ -33,11 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Download, ExternalLink, Search } from "lucide-react";
-import {
-  CLIENT_APPROVALS,
-  downloadCsv,
-  opportunitiesToCsv,
-} from "@/lib/budget";
+import { CLIENT_APPROVALS, downloadCsv, opportunitiesToCsv } from "@/lib/budget";
 
 const TABS = ["tracked", "review", "closed"] as const;
 type Tab = (typeof TABS)[number];
@@ -415,7 +411,6 @@ function OpportunitiesPage() {
                           </select>
                         </Td>
                         <Td>
-
                           <select
                             value={o.application_stage ?? ""}
                             onChange={(e) => setStage(o.id, e.target.value)}

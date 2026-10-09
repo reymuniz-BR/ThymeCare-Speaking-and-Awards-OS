@@ -266,7 +266,6 @@ export function NewOpportunityDialog({
             <Input value={form.category} onChange={(e) => set("category", e.target.value)} />
           </Field>
           <Field label="Client approval">
-
             <NativeSelect
               value={form.client_approval}
               onChange={(v) => set("client_approval", v)}

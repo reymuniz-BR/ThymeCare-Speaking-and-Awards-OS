@@ -67,8 +67,8 @@ export function AccessList() {
 
   return (
     <Panel
-      title="Approved sign-in emails"
-      hint="Only these emails (and existing accounts) can create access. Admins and managers can edit."
+      title="Team access & approvals"
+      hint="Anyone signing in with their company Google account receives instant access. You can also manually pre-approve specific emails below."
     >
       <form onSubmit={add} className="flex flex-wrap items-end gap-2 border-b border-border p-3">
         <div>
