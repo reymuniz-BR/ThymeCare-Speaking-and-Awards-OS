@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireManagerAuth } from "@/integrations/supabase/auth-middleware";
 
 export type MessagingSyncResult = {
   sections: number;
@@ -11,8 +11,9 @@ export type MessagingSyncResult = {
  * section as a tagged Content Library snippet, replacing the previous pull.
  */
 export const syncMasterMessaging = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<MessagingSyncResult> => {
+  // Replaces (deletes) the previous pull, which the original RLS reserved for managers.
+  .middleware([requireManagerAuth])
+  .handler(async ({ context }): Promise<MessagingSyncResult> => {
     const { pullMasterMessaging } = await import("@/lib/messaging.server");
-    return pullMasterMessaging();
+    return pullMasterMessaging(context.supabase);
   });

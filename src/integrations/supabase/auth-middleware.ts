@@ -9,16 +9,28 @@ function reject(status: 401 | 403, message: string): never {
   });
 }
 
-/** uid -> expiry, so a burst of server calls costs one allowlist read. */
-const memberCache = new Map<string, number>();
-const MEMBER_TTL_MS = 60_000;
+export type AppRole = "admin" | "manager" | "contributor" | "viewer";
+
+type Membership = { role: AppRole | null; until: number };
 
 /**
- * Gate for every server function: a valid Firebase ID token from a verified,
- * allowlisted team member (the same predicate firestore.rules uses for the
- * browser). Anything else is rejected before the handler runs. The handler
- * then gets the admin-backed data client, which bypasses rules, so this check
- * IS the authorization boundary for server functions.
+ * Short-lived cache of allowlist + role lookups, keyed on uid AND email so a
+ * changed address never inherits an old answer. Tokens are also checked for
+ * revocation on every call, so this only saves the two Firestore reads.
+ */
+const MEMBERSHIP_TTL_MS = 30_000;
+const membershipCache = new Map<string, Membership>();
+
+/**
+ * Gate for every server function: a valid, non-revoked Firebase ID token from a
+ * verified, allowlisted team member (the same predicate firestore.rules uses
+ * for the browser). Anything else is rejected before the handler runs.
+ *
+ * The handler gets an admin-backed data client that bypasses rules, so this
+ * middleware IS the authorization boundary for server functions. The client is
+ * built per request and carries the verified uid as the audit actor, and the
+ * caller's role (from user_roles/{uid}) is in context for role-gated functions
+ * (see requireManagerAuth / requireAdminAuth).
  */
 export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
@@ -34,9 +46,10 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     const { adminAuth, adminDb } = await import("@/lib/firebase-admin");
     let decoded;
     try {
-      decoded = await adminAuth.verifyIdToken(token);
+      // checkRevoked: a disabled or signed-out-everywhere user stops working at once.
+      decoded = await adminAuth.verifyIdToken(token, true);
     } catch {
-      reject(401, "Unauthorized: invalid or expired token");
+      reject(401, "Unauthorized: invalid, expired or revoked token");
     }
 
     const email = decoded.email?.toLowerCase();
@@ -44,18 +57,43 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       reject(403, "Forbidden: a verified email is required");
     }
 
-    const cachedUntil = memberCache.get(decoded.uid) ?? 0;
-    if (cachedUntil < Date.now()) {
-      const member = await adminDb.collection("allowed_emails").doc(email).get();
+    const cacheKey = `${decoded.uid}:${email}`;
+    let membership = membershipCache.get(cacheKey);
+    if (!membership || membership.until < Date.now()) {
+      const [member, roleDoc] = await Promise.all([
+        adminDb.collection("allowed_emails").doc(email).get(),
+        adminDb.collection("user_roles").doc(decoded.uid).get(),
+      ]);
       if (!member.exists) {
-        memberCache.delete(decoded.uid);
+        membershipCache.delete(cacheKey);
         reject(403, "Forbidden: this email is not approved for access");
       }
-      memberCache.set(decoded.uid, Date.now() + MEMBER_TTL_MS);
+      const role = roleDoc.exists ? (roleDoc.data()?.["role"] as AppRole | undefined) : undefined;
+      membership = { role: role ?? null, until: Date.now() + MEMBERSHIP_TTL_MS };
+      membershipCache.set(cacheKey, membership);
     }
 
-    const { supabaseAdmin } = await import("./client.server");
-    const supabase: AppDb = supabaseAdmin;
-    return next({ context: { supabase, userId: decoded.uid, email, claims: decoded } });
+    const { adminClientFor } = await import("./client.server");
+    const supabase: AppDb = adminClientFor(decoded.uid);
+    return next({
+      context: { supabase, userId: decoded.uid, email, role: membership.role, claims: decoded },
+    });
   },
 );
+
+function requireRoles(roles: readonly AppRole[]) {
+  return createMiddleware({ type: "function" })
+    .middleware([requireSupabaseAuth])
+    .server(async ({ next, context }) => {
+      if (!context.role || !roles.includes(context.role)) {
+        reject(403, `Forbidden: requires the ${roles.join(" or ")} role`);
+      }
+      return next();
+    });
+}
+
+/** Original RLS `can_manage()`: admin or manager. Use for deletes and purges. */
+export const requireManagerAuth = requireRoles(["admin", "manager"]);
+
+/** Original `has_role(uid, 'admin')`: allowlist and role administration. */
+export const requireAdminAuth = requireRoles(["admin"]);

@@ -11,7 +11,7 @@ export const syncTracker = createServerFn({ method: "POST" })
   .inputValidator((input: { dryRun?: boolean } | undefined) => ({
     dryRun: input?.dryRun === true,
   }))
-  .handler(async ({ data }): Promise<TrackerSyncResult> => {
+  .handler(async ({ data, context }): Promise<TrackerSyncResult> => {
     const { syncTrackerGrid } = await import("./tracker-sync.server");
-    return syncTrackerGrid({ dryRun: data.dryRun });
+    return syncTrackerGrid({ dryRun: data.dryRun, db: context.supabase });
   });

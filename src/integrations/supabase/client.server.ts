@@ -8,12 +8,26 @@ import { DbClient, type AppDb } from "./firestore/builder";
 import { createAdminBackend } from "./firestore/admin-backend";
 import type { TableName } from "./firestore/schema.generated";
 
-const database = new DbClient(createAdminBackend(adminDb));
+function clientFor(actorId: string | null): AppDb {
+  const database = new DbClient(createAdminBackend(adminDb, actorId));
+  return {
+    from<T extends TableName>(table: T) {
+      return database.from(table);
+    },
+  };
+}
 
-export const supabaseAdmin: AppDb = {
-  from<T extends TableName>(table: T) {
-    return database.from(table);
-  },
-};
+/**
+ * Actor-less admin client, for work with no signed-in user: the scheduled hooks
+ * and the seed script. Anything running on behalf of a user must use the
+ * per-request client from the auth middleware (`context.supabase`) so audit rows
+ * carry who did it.
+ */
+export const supabaseAdmin: AppDb = clientFor(null);
+
+/** Admin client that attributes writes (activity log) to a verified user. */
+export function adminClientFor(uid: string): AppDb {
+  return clientFor(uid);
+}
 
 export { adminDb };

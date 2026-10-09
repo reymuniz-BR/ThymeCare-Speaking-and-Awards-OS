@@ -28,7 +28,7 @@ Data lives in Firestore (the named database in `firebase-applet-config.json`). A
 - **Team member**: a signed-in user with a *verified* email that has a document at `allowed_emails/<lowercase email>`. Signing in alone grants nothing.
 - **Roles**: `user_roles/<uid>` holds `{ user_id, role }` (`admin`, `manager`, `contributor`, `viewer`). Only admins write `allowed_emails` and `user_roles`; managers and admins delete program data and edit taxonomy.
 - **Server-only collections** (clients are denied everything): `job_secrets`, `webhook_runs`, `email_digest_log`, `integration_tokens`.
-- **Server code** (server functions, scheduled hooks, scripts) uses firebase-admin through `src/integrations/supabase/client.server.ts`. Server functions require a valid Firebase ID token from an allowlisted, verified user (401/403 otherwise).
+- **Server code** (server functions, scheduled hooks, scripts) uses firebase-admin through `src/integrations/supabase/client.server.ts`. Server functions require a valid, non-revoked Firebase ID token from an allowlisted, verified user (401/403 otherwise) and run on a per-request admin client that records the caller as the audit actor; functions that delete or purge (Drive sync, master-messaging sync) additionally require the `admin` or `manager` role, as the original `can_manage()` RLS did. The actor-less `supabaseAdmin` is for scheduled hooks and scripts only.
 
 The original "first user becomes admin" trigger is deliberately not reproduced in the browser. Seed the first admin from a trusted shell instead (Cloud Shell works; it uses Application Default Credentials against the project in `firebase-applet-config.json`):
 
