@@ -57,10 +57,10 @@ type FieldRow = {
   submissions: { title: string; opportunities: { name: string; type: string } | null } | null;
 };
 
-import type { supabase } from "@/integrations/supabase/client";
+import type { AppDb } from "@/integrations/supabase/firestore/builder";
 
-// The authenticated client from the auth middleware.
-type Client = typeof supabase;
+// The server-side client from the auth middleware (admin Firestore).
+type Client = AppDb;
 
 export async function gatherLibrarySources(
   supabase: Client,
