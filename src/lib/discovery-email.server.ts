@@ -7,7 +7,9 @@
  * a failed send releases its claim for a later attempt.
  */
 
+import type { AppDb } from "@/integrations/supabase/firestore/builder";
 import { sendEmail } from "@/lib/email.server";
+import { teamRecipients } from "@/lib/team.server";
 import { weekStart } from "@/lib/digest";
 
 export type DiscoverEmailResult = {
@@ -18,7 +20,7 @@ export type DiscoverEmailResult = {
   errors: string[];
 };
 
-type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+type Admin = AppDb;
 
 function appUrl(): string {
   return (
@@ -28,7 +30,7 @@ function appUrl(): string {
 
 /**
  * Where the weekly scan is mailed. A team alias wins when one is configured;
- * otherwise everyone with a role on the program gets it.
+ * otherwise everyone on the approved-email list gets it.
  */
 export async function discoverRecipients(db: Admin): Promise<string[]> {
   const alias = (
@@ -42,13 +44,7 @@ export async function discoverRecipients(db: Admin): Promise<string[]> {
       .map((a) => a.trim())
       .filter(Boolean);
 
-  const { data: roles, error: roleError } = await db.from("user_roles").select("user_id");
-  if (roleError) throw new Error(roleError.message);
-  const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
-  if (!ids.length) return [];
-  const { data, error } = await db.from("profiles").select("email").in("id", ids);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((p) => p.email).filter((e): e is string => Boolean(e));
+  return (await teamRecipients(db)).map((m) => m.email);
 }
 
 type Candidate = {

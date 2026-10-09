@@ -29,7 +29,9 @@ import {
 } from "@/lib/digest";
 import { bestDeadline } from "@/lib/opportunity-view";
 import { daysUntil } from "@/lib/program";
+import type { AppDb } from "@/integrations/supabase/firestore/builder";
 import { sendEmail } from "@/lib/email.server";
+import { teamRecipients } from "@/lib/team.server";
 
 export type DigestRunResult = {
   weeklySent: number;
@@ -45,7 +47,7 @@ function appUrl(): string {
   );
 }
 
-type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+type Admin = AppDb;
 
 /**
  * Claim a send. Returns false when this exact email was already logged, which
@@ -115,17 +117,6 @@ async function deliver(
   }
 }
 
-/** Everyone with a role on the program, i.e. the team. */
-async function teamMembers(db: Admin) {
-  const { data: roles, error: roleError } = await db.from("user_roles").select("user_id");
-  if (roleError) throw new Error(roleError.message);
-  const ids = [...new Set((roles ?? []).map((r) => r.user_id))];
-  if (!ids.length) return [];
-  const { data, error } = await db.from("profiles").select("id, email, full_name").in("id", ids);
-  if (error) throw new Error(error.message);
-  return (data ?? []).filter((p): p is typeof p & { email: string } => Boolean(p.email));
-}
-
 async function collectWeeklyData(db: Admin, opps: DigestOpportunity[]): Promise<WeeklyDigestData> {
   const deadlines = upcomingDeadlines(opps).map((o) => {
     const deadline = bestDeadline(o)!;
@@ -193,7 +184,7 @@ export async function runEmailDigests(now = new Date()): Promise<DigestRunResult
   const weekly = await collectWeeklyData(db, opps);
   const count = weeklyDigestItemCount(weekly);
   const body = renderWeeklyDigest(weekly, appUrl());
-  const members = await teamMembers(db);
+  const members = await teamRecipients(db);
 
   for (const member of members) {
     await deliver(db, result, {
@@ -208,7 +199,7 @@ export async function runEmailDigests(now = new Date()): Promise<DigestRunResult
   }
 
   // 2. Owner reminders at 14, 7 and 2 days out.
-  const byId = new Map(members.map((m) => [m.id, m]));
+  const byId = new Map(members.flatMap((m) => (m.id ? [[m.id, m] as const] : [])));
   for (const o of opps) {
     const threshold = reminderThreshold(o);
     if (threshold === null || !o.owner_id) continue;
