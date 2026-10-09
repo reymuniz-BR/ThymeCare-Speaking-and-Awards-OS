@@ -16,9 +16,14 @@ const chunk = <V>(items: readonly V[], size: number): V[][] => {
   return out;
 };
 
-export function createAdminBackend(db: Firestore): Backend {
+/**
+ * `actorId` is the verified user a server function is acting for (recorded by
+ * the activity-log triggers). Leave it null only for jobs with no user: the
+ * scheduled hooks and the seed script.
+ */
+export function createAdminBackend(db: Firestore, actorId: string | null = null): Backend {
   return {
-    actorId: null,
+    actorId,
     scopeToOwner: false,
 
     async getMany(table, ids) {

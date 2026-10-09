@@ -3,6 +3,9 @@
  * backend (no Firebase, no network). Run with `npm run test:db`.
  */
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { DbClient } from "./builder.ts";
 import { MemoryBackend } from "./memory-backend.testing.ts";
@@ -480,6 +483,60 @@ describe("update / delete / upsert", () => {
     assert.equal(backend.docs("submission_fields").length, 0);
     assert.equal(backend.docs("submission_answer_versions").length, 0);
     assert.equal(backend.docs("opportunities").length, 1);
+  });
+});
+
+describe("natural keys", () => {
+  it("refuses to edit the columns a document ID is derived from", async () => {
+    const { db } = fresh();
+    await db.from("taxonomy_options").insert({ kind: "priority", value: "p1", label: "P1" });
+    const rename = await db.from("taxonomy_options").update({ label: "Urgent" }).eq("value", "p1");
+    assert.equal(rename.error, null);
+    const rekey = await db.from("taxonomy_options").update({ value: "p2" }).eq("value", "p1");
+    assert.equal(rekey.error?.code, "23000");
+  });
+});
+
+describe("every embedded select in the app resolves", () => {
+  // Scan the source for `.from("t").select("...")` and run each against an empty
+  // store: an unresolvable relation fails with PGRST200 even with zero rows.
+  const root = fileURLToPath(new URL("../../../", import.meta.url)); // src/
+  const files: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (/\.(ts|tsx)$/.test(name) && !/\.(test|check|generated)\./.test(name))
+        files.push(full);
+    }
+  };
+  walk(root);
+
+  const selects: { table: string; select: string; file: string }[] = [];
+  for (const file of files) {
+    const text = readFileSync(file, "utf8");
+    for (const m of text.matchAll(/\.from\("(\w+)"\)\s*\.select\(\s*"([^"]+)"/g)) {
+      selects.push({ table: m[1]!, select: m[2]!, file });
+    }
+  }
+
+  it("found the app's relation selects", () => {
+    assert.ok(
+      selects.filter((s) => s.select.includes("(")).length >= 10,
+      "scan found too few selects",
+    );
+  });
+
+  it("resolves all of them", async () => {
+    const { db } = fresh();
+    for (const { table, select, file } of selects) {
+      const { error } = await (
+        db.from(table as "speakers") as unknown as {
+          select(cols: string): PromiseLike<{ error: { message: string } | null }>;
+        }
+      ).select(select);
+      assert.equal(error, null, `${table}.select("${select}") in ${file}: ${error?.message}`);
+    }
   });
 });
 

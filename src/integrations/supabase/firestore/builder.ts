@@ -137,6 +137,23 @@ function docIdFromRow(table: TableName, row: Json): string | null {
   return /^__.*__$/.test(id) || id === "." || id === ".." ? `k${id}` : id;
 }
 
+/** The document ID is derived from the key columns, so they cannot be edited in place. */
+function assertKeyUnchanged(table: TableName, before: Json, patch: Json): void {
+  const key = DOC_KEY[table] as readonly string[] | undefined;
+  for (const column of key ?? []) {
+    if (
+      column in patch &&
+      idPart(table, column, before[column]) !== idPart(table, column, patch[column])
+    ) {
+      throw new DbError(
+        `Cannot change '${column}' of a '${table}' row; delete it and insert a new one`,
+        "23000",
+        "The document ID is derived from this column.",
+      );
+    }
+  }
+}
+
 const sameSet = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((x) => b.includes(x));
 
@@ -651,6 +668,7 @@ export class QueryBuilder<T extends TableName, R> implements PromiseLike<DbRespo
         if (!current) return { write: null, result: null };
         const old = toRow(this.table, { id, data: current });
         if (!matchesAll(old, filters)) return { write: null, result: null };
+        assertKeyUnchanged(this.table, old, patch);
         return {
           write: { type: "update", data: patch },
           result: { old, next: { ...old, ...patch } },
@@ -659,6 +677,7 @@ export class QueryBuilder<T extends TableName, R> implements PromiseLike<DbRespo
       if (hit) changed.push(hit);
     } else {
       const loaded = await fetchLoaded(this.backend, this.table, this.filters);
+      for (const l of loaded) assertKeyUnchanged(this.table, l.row, patch);
       await this.backend.write(
         loaded.map((l) => ({ type: "update", table: this.table, id: l.id, data: patch }) as const),
       );
