@@ -1,204 +1,297 @@
 rules_version = '2';
 
+// Access model (ported from the original Supabase RLS, supabase/migrations):
+//
+//   team member  a signed-in user whose VERIFIED email has a document in
+//                allowed_emails (document ID = the lowercase email).
+//                Mirrors is_team_member(). Signing in never grants access.
+//   admin        a team member with user_roles/{uid}.role == 'admin'.
+//   manager      role 'manager' (or admin): may delete program data and edit
+//                taxonomy, as can_manage() allowed.
+//
+// Server code (server functions, scheduled hooks, the seed script) uses the
+// Admin SDK, which bypasses these rules. Collections that only the server
+// touches are denied to every client below.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default deny catch-all
+    // Default deny: anything not matched below is closed.
     match /{document=**} {
       allow read, write: if false;
     }
+
+    // ---------------------------------------------------------------- helpers
 
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 256 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // User Profiles
+    // Email/password accounts start unverified, so a stranger who registers
+    // someone else's address with a password gets nothing until it is verified.
+    function hasVerifiedEmail() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function allowlistPath(email) {
+      return /databases/$(database)/documents/allowed_emails/$(email);
+    }
+
+    function rolePath(uid) {
+      return /databases/$(database)/documents/user_roles/$(uid);
+    }
+
+    function isTeamMember() {
+      return hasVerifiedEmail()
+        && exists(allowlistPath(request.auth.token.email.lower()));
+    }
+
+    function hasRole(roles) {
+      return isTeamMember()
+        && exists(rolePath(request.auth.uid))
+        && get(rolePath(request.auth.uid)).data.role in roles;
+    }
+
+    function isAdmin() {
+      return hasRole(['admin']);
+    }
+
+    // can_manage() in the original schema: admin or manager.
+    function canManage() {
+      return hasRole(['admin', 'manager']);
+    }
+
+    function isKnownRole(role) {
+      return role in ['admin', 'manager', 'contributor', 'viewer'];
+    }
+
+    // ------------------------------------------------------- people & access
+
+    // Everyone on the team can see everyone; people may only create and edit
+    // their own row, and never change who it belongs to or its email.
     match /profiles/{userId} {
-      allow read: if isSignedIn() && isValidId(userId);
-      allow create: if isOwner(userId) && isValidId(userId);
-      allow update: if isOwner(userId) && isValidId(userId);
+      allow read: if isTeamMember();
+      allow create: if isTeamMember()
+        && isOwner(userId)
+        && isValidId(userId)
+        && request.resource.data.keys().hasOnly(
+          ['id', 'email', 'full_name', 'title', 'avatar_url', 'created_at', 'updated_at'])
+        && request.resource.data.id == userId
+        && request.resource.data.email.lower() == request.auth.token.email.lower();
+      allow update: if isTeamMember()
+        && isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['full_name', 'title', 'avatar_url', 'updated_at']);
       allow delete: if false;
     }
 
-    // Allowed Emails & Pre-approvals
+    // The allowlist. Anyone signed in can ask "is MY address on it?" (the sign-in
+    // screen does); only team members can list it; only admins change it.
     match /allowed_emails/{emailId} {
-      allow read: if isSignedIn() && isValidId(emailId);
-      allow create, update: if isSignedIn() && isValidId(emailId);
-      allow delete: if isSignedIn() && isValidId(emailId);
+      allow get: if isTeamMember()
+        || (hasVerifiedEmail() && emailId == request.auth.token.email.lower());
+      allow list: if isTeamMember();
+      allow create, update: if isAdmin()
+        && emailId.matches('^[^/@\\s]+@[^/@\\s]+$')
+        && emailId == emailId.lower()
+        && request.resource.data.email == emailId;
+      allow delete: if isAdmin();
     }
 
-    // Opportunities
-    match /opportunities/{opportunityId} {
-      allow read: if isSignedIn() && isValidId(opportunityId);
-      allow create: if isSignedIn() && isValidId(opportunityId);
-      allow update: if isSignedIn() && isValidId(opportunityId);
-      allow delete: if isSignedIn() && isValidId(opportunityId);
+    // One role document per user, keyed by uid. Admin-only writes: this is the
+    // only place privilege lives, and profiles cannot carry role fields.
+    match /user_roles/{uid} {
+      allow read: if isTeamMember();
+      allow create, update: if isAdmin()
+        && isValidId(uid)
+        && request.resource.data.user_id == uid
+        && isKnownRole(request.resource.data.role);
+      allow delete: if isAdmin();
     }
 
-    // Opportunity Dates
-    match /opportunity_dates/{dateId} {
-      allow read: if isSignedIn() && isValidId(dateId);
-      allow create, update, delete: if isSignedIn() && isValidId(dateId);
+    // ----------------------------------------------------------- program data
+    // Team members read, create and edit. Deleting is for managers and admins.
+
+    match /opportunities/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Opportunity Cycles
-    match /opportunity_cycles/{cycleId} {
-      allow read: if isSignedIn() && isValidId(cycleId);
-      allow create, update, delete: if isSignedIn() && isValidId(cycleId);
+    match /opportunity_dates/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Opportunity Changes (diff tracking)
-    match /opportunity_changes/{changeId} {
-      allow read: if isSignedIn() && isValidId(changeId);
-      allow create, update, delete: if isSignedIn() && isValidId(changeId);
+    match /opportunity_cycles/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Submissions
-    match /submissions/{submissionId} {
-      allow read: if isSignedIn() && isValidId(submissionId);
-      allow create: if isSignedIn() && isValidId(submissionId);
-      allow update: if isSignedIn() && isValidId(submissionId);
-      allow delete: if isSignedIn() && isValidId(submissionId);
+    match /opportunity_changes/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Submission Fields
-    match /submission_fields/{fieldId} {
-      allow read: if isSignedIn() && isValidId(fieldId);
-      allow create: if isSignedIn() && isValidId(fieldId);
-      allow update: if isSignedIn() && isValidId(fieldId);
-      allow delete: if isSignedIn() && isValidId(fieldId);
+    match /submissions/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Submission Speakers
-    match /submission_speakers/{subSpeakerId} {
-      allow read: if isSignedIn() && isValidId(subSpeakerId);
-      allow create, update, delete: if isSignedIn() && isValidId(subSpeakerId);
+    match /submission_fields/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Submission Briefs
-    match /submission_briefs/{briefId} {
-      allow read: if isSignedIn() && isValidId(briefId);
-      allow create, update, delete: if isSignedIn() && isValidId(briefId);
+    match /submission_speakers/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Submission Answer Versions
-    match /submission_answer_versions/{versionId} {
-      allow read: if isSignedIn() && isValidId(versionId);
-      allow create, update, delete: if isSignedIn() && isValidId(versionId);
+    match /submission_briefs/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Brief Items
-    match /brief_items/{itemId} {
-      allow read: if isSignedIn() && isValidId(itemId);
-      allow create, update, delete: if isSignedIn() && isValidId(itemId);
+    match /submission_answer_versions/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Proof Points Bank
-    match /proof_points/{proofPointId} {
-      allow read: if isSignedIn() && isValidId(proofPointId);
-      allow create: if isSignedIn() && isValidId(proofPointId);
-      allow update: if isSignedIn() && isValidId(proofPointId);
-      allow delete: if isSignedIn() && isValidId(proofPointId);
+    match /brief_items/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Content Assets (Google Drive synced)
-    match /content_assets/{assetId} {
-      allow read: if isSignedIn() && isValidId(assetId);
-      allow create: if isSignedIn() && isValidId(assetId);
-      allow update: if isSignedIn() && isValidId(assetId);
-      allow delete: if isSignedIn() && isValidId(assetId);
+    match /proof_points/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Content Snippets
-    match /content_snippets/{snippetId} {
-      allow read: if isSignedIn() && isValidId(snippetId);
-      allow create: if isSignedIn() && isValidId(snippetId);
-      allow update: if isSignedIn() && isValidId(snippetId);
-      allow delete: if isSignedIn() && isValidId(snippetId);
+    match /content_assets/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Speakers
-    match /speakers/{speakerId} {
-      allow read: if isSignedIn() && isValidId(speakerId);
-      allow create: if isSignedIn() && isValidId(speakerId);
-      allow update: if isSignedIn() && isValidId(speakerId);
-      allow delete: if isSignedIn() && isValidId(speakerId);
+    match /content_snippets/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Discoveries (AI scan and candidate opportunities)
-    match /discoveries/{discoveryId} {
-      allow read: if isSignedIn() && isValidId(discoveryId);
-      allow create, update, delete: if isSignedIn() && isValidId(discoveryId);
+    match /speakers/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Monitoring Checks
-    match /monitoring_checks/{checkId} {
-      allow read: if isSignedIn() && isValidId(checkId);
-      allow create, update, delete: if isSignedIn() && isValidId(checkId);
+    match /discoveries/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
+      allow update: if isTeamMember();
+      allow delete: if canManage();
     }
 
-    // Saved Views
-    match /saved_views/{viewId} {
-      allow read: if isSignedIn() && isValidId(viewId);
-      allow create, update, delete: if isSignedIn() && isValidId(viewId);
-    }
-
-    // User Roles
-    match /user_roles/{roleId} {
-      allow read: if isSignedIn() && isValidId(roleId);
-      allow create, update, delete: if isSignedIn() && isValidId(roleId);
-    }
-
-    // Activity Log
-    match /activity_log/{logId} {
-      allow read: if isSignedIn() && isValidId(logId);
-      allow create: if isSignedIn() && isValidId(logId);
+    // Monitoring checks are an append-only log (no update policy originally).
+    match /monitoring_checks/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember() && isValidId(id);
       allow update: if false;
-      allow delete: if false;
+      allow delete: if canManage();
     }
 
-    // Notifications
-    match /notifications/{notificationId} {
-      allow read: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(notificationId);
-      allow update: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
-      allow delete: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
+    // Audit trail: members append entries attributed to themselves; nobody
+    // edits or erases history from a client.
+    match /activity_log/{id} {
+      allow read: if isTeamMember();
+      allow create: if isTeamMember()
+        && isValidId(id)
+        && request.resource.data.actor_id == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Taxonomy Options
-    match /taxonomy_options/{optionId} {
-      allow read: if isSignedIn() && isValidId(optionId);
-      allow create: if isSignedIn() && isValidId(optionId);
-      allow update: if isSignedIn() && isValidId(optionId);
-      allow delete: if isSignedIn() && isValidId(optionId);
+    // Configurable status/priority/etc. lists: everyone reads, managers edit.
+    match /taxonomy_options/{id} {
+      allow read: if isTeamMember();
+      allow create: if canManage() && isValidId(id);
+      allow update: if canManage();
+      allow delete: if canManage();
     }
 
-    // Email Digest Log
-    match /email_digest_log/{logId} {
-      allow read: if isSignedIn() && isValidId(logId);
-      allow create, update, delete: if isSignedIn() && isValidId(logId);
+    // -------------------------------------------------------- per-user data
+    // Private to the owning user. Clients must query with
+    // where('user_id', '==', uid), which the data layer does for them.
+
+    match /notifications/{id} {
+      allow read, update, delete: if isTeamMember() && resource.data.user_id == request.auth.uid;
+      allow create: if isTeamMember()
+        && isValidId(id)
+        && request.resource.data.user_id == request.auth.uid;
     }
 
-    // Job Secrets & Webhook Runs
-    match /job_secrets/{secretId} {
-      allow read, write: if isSignedIn() && isValidId(secretId);
+    match /saved_views/{id} {
+      allow read, update, delete: if isTeamMember() && resource.data.user_id == request.auth.uid;
+      allow create: if isTeamMember()
+        && isValidId(id)
+        && request.resource.data.user_id == request.auth.uid;
     }
 
-    match /webhook_runs/{runId} {
-      allow read, write: if isSignedIn() && isValidId(runId);
+    // ------------------------------------------------- server-only collections
+    // Reached only through the Admin SDK (which bypasses rules). Explicit
+    // matches so the intent survives anyone loosening the catch-all above.
+
+    // Per-job shared secrets for the scheduled hooks and the calendar feed.
+    match /job_secrets/{id} {
+      allow read, write: if false;
     }
 
-    // Connection test document
-    match /test/{docId} {
-      allow read, write: if isSignedIn();
+    // Single-flight/run markers for scheduled hooks.
+    match /webhook_runs/{id} {
+      allow read, write: if false;
+    }
+
+    // Idempotency log so each digest email is sent once.
+    match /email_digest_log/{id} {
+      allow read, write: if false;
+    }
+
+    // OAuth refresh tokens for integrations (Google Drive). Never client-readable.
+    match /integration_tokens/{id} {
+      allow read, write: if false;
     }
   }
 }
