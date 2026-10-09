@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { authorizeHook, json } from "@/lib/hook-auth.server";
 
 const JOB_NAME = "discover-daily";
 const PAUSE_NAME = "discover-daily-paused";
@@ -23,23 +24,6 @@ const WEEKLY_BRIEFS: string[] = [
   "Association, payer, provider and policy-body recognition programs, quality awards and member-meeting speaking slots in healthcare.",
 ];
 
-function safeEqual(a: string, b: string): boolean {
-  const enc = new TextEncoder();
-  const av = enc.encode(a);
-  const bv = enc.encode(b);
-  let diff = av.length ^ bv.length;
-  const max = Math.max(av.length, bv.length);
-  for (let i = 0; i < max; i++) diff |= (av[i] ?? 0) ^ (bv[i] ?? 0);
-  return diff === 0;
-}
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
 /** Terminal AI-gateway states that must park the job instead of retrying. */
 function isBlocked(message: string): boolean {
   return /credits exhausted|rejected|disabled|forbidden|402|403/i.test(message);
@@ -48,8 +32,9 @@ function isBlocked(message: string): boolean {
 /**
  * Weekly discovery scan, called by the Monday scheduled job.
  *
- * Auth: MONITOR_WEBHOOK_SECRET as `x-monitor-secret` (or a bearer token),
- * compared in constant time. The publishable key is NOT accepted.
+ * Auth: the stored `discover-daily` job secret or MONITOR_WEBHOOK_SECRET, sent as
+ * `x-job-secret` / `x-monitor-secret` / a bearer token (see hook-auth.server.ts).
+ * 503 when no secret is configured. Scheduler headers are never trusted.
  *
  * Safety: one scan per ~6 days claimed atomically in public.webhook_runs, a hard
  * row cap, a relevance floor, and a persisted pause on AI credit/policy blocks
@@ -59,29 +44,10 @@ export const Route = createFileRoute("/api/public/hooks/discover-daily")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const header =
-          request.headers.get("x-job-secret") ?? request.headers.get("x-monitor-secret");
-        const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-        const provided = header ?? bearer;
-        const isCloudScheduler =
-          request.headers.get("x-cloudscheduler") === "true" ||
-          request.headers.get("user-agent")?.includes("Google-Cloud-Scheduler");
+        const denied = await authorizeHook(request, { jobName: JOB_NAME });
+        if (denied) return denied;
 
-        if (!isCloudScheduler) {
-          if (!provided) return json({ error: "Unauthorized" }, 401);
-
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-          // Accepted secrets: the stored job secret, or the monitoring webhook secret.
-          const { data: secretRow } = await supabaseAdmin
-            .from("job_secrets")
-            .select("secret")
-            .eq("name", JOB_NAME)
-            .maybeSingle();
-          const candidates = [secretRow?.secret ?? "", process.env["MONITOR_WEBHOOK_SECRET"] ?? ""];
-          if (!candidates.some((s) => s && safeEqual(provided, s)))
-            return json({ error: "Unauthorized" }, 401);
-        }
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const now = new Date().toISOString();
         const cutoff = new Date(Date.now() - MIN_INTERVAL_MS).toISOString();
