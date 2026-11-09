@@ -7,67 +7,20 @@ import type { AppDb } from "@/integrations/supabase/firestore/builder";
  */
 import * as XLSX from "xlsx";
 
-const GOOGLE_DRIVE_API = "https://www.googleapis.com/drive/v3";
-const GATEWAY_DRIVE_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
-
 /** The tracker workbook in the shared team Drive. */
 export const TRACKER_FILE_ID = "1lr4-FbpgLjQOkjtQJz2w1A_qIb-DRdrI";
 
 export type SheetRow = Record<string, string>;
 
-function resolveDriveUrl(
-  path: string,
-  params: Record<string, string> = {},
-): { url: string; headers: Record<string, string> } {
-  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
-  const lovableKey = process.env["LOVABLE_API_KEY"];
-
-  const query = new URLSearchParams(params);
-  query.set("supportsAllDrives", "true");
-
-  if (driveKey && (!lovableKey || driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer "))) {
-    if (driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer ")) {
-      const token = driveKey.replace(/^Bearer\s+/i, "");
-      return {
-        url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
-        headers: { Authorization: `Bearer ${token}` },
-      };
-    }
-    query.set("key", driveKey);
-    return {
-      url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
-      headers: {},
-    };
-  }
-
-  if (lovableKey && driveKey) {
-    return {
-      url: `${GATEWAY_DRIVE_URL}${path}?${query.toString()}`,
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": driveKey,
-      },
-    };
-  }
-
-  if (driveKey) {
-    query.set("key", driveKey);
-    return {
-      url: `${GOOGLE_DRIVE_API}${path}?${query.toString()}`,
-      headers: {},
-    };
-  }
-
-  throw new Error(
-    "Google Drive is not connected yet. Add GOOGLE_DRIVE_API_KEY in workspace settings.",
-  );
+async function driveGet(path: string, params: Record<string, string>): Promise<Response> {
+  const { driveClient } = await import("./drive-connection.server");
+  return driveClient().fetch(path, params);
 }
 
 export async function trackerMeta(): Promise<{ name: string; modifiedTime: string }> {
-  const req = resolveDriveUrl(`/files/${TRACKER_FILE_ID}`, {
+  const res = await driveGet(`/files/${TRACKER_FILE_ID}`, {
     fields: "id,name,modifiedTime",
   });
-  const res = await fetch(req.url, { headers: req.headers });
   if (!res.ok) throw new Error(`Drive request failed [${res.status}]: ${await res.text()}`);
   const json = (await res.json()) as { name: string; modifiedTime: string };
   return { name: json.name, modifiedTime: json.modifiedTime };
@@ -77,8 +30,7 @@ export async function trackerMeta(): Promise<{ name: string; modifiedTime: strin
 export async function readTracker(): Promise<
   Array<{ sheet: string; headers: string[]; rows: SheetRow[] }>
 > {
-  const req = resolveDriveUrl(`/files/${TRACKER_FILE_ID}`, { alt: "media" });
-  const res = await fetch(req.url, { headers: req.headers });
+  const res = await driveGet(`/files/${TRACKER_FILE_ID}`, { alt: "media" });
   if (!res.ok) throw new Error(`Drive download failed [${res.status}]: ${await res.text()}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
@@ -332,24 +284,6 @@ export async function syncTrackerGrid(
   // the scheduled hook runs without one.
   const supabaseAdmin =
     opts.db ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
-
-  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
-  if (!driveKey) {
-    const { data: existing } = await supabaseAdmin.from("opportunities").select("id,name");
-    const count = (existing ?? []).length;
-    return {
-      file: "Speaking and Awards Master Grid (Local Mode)",
-      modifiedTime: new Date().toISOString(),
-      rowsRead: count,
-      created: 0,
-      updated: 0,
-      unchanged: count,
-      unmatchedInApp: [],
-      unmappedStatuses: [],
-      changes: [],
-      dryRun,
-    };
-  }
 
   const [meta, sheets] = await Promise.all([trackerMeta(), readTracker()]);
 

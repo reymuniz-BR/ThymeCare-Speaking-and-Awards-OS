@@ -27,6 +27,7 @@ import { Route as AuthenticatedOpportunitiesIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedSubmissionsIdRouteImport } from './routes/_authenticated/submissions_.$id'
 import { Route as AuthenticatedWorkspaceIdRouteImport } from './routes/_authenticated/workspace_.$id'
 import { Route as ApiPublicCalendarFeedRouteImport } from './routes/api/public/calendar-feed'
+import { Route as ApiPublicDriveOauthCallbackRouteImport } from './routes/api/public/drive-oauth/callback'
 import { Route as ApiPublicHooksDiscoverDailyRouteImport } from './routes/api/public/hooks/discover-daily'
 import { Route as ApiPublicHooksEmailDigestRouteImport } from './routes/api/public/hooks/email-digest'
 import { Route as ApiPublicHooksMonitorWeeklyRouteImport } from './routes/api/public/hooks/monitor-weekly'
@@ -126,6 +127,12 @@ const ApiPublicCalendarFeedRoute = ApiPublicCalendarFeedRouteImport.update({
   path: '/api/public/calendar-feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDriveOauthCallbackRoute =
+  ApiPublicDriveOauthCallbackRouteImport.update({
+    id: '/api/public/drive-oauth/callback',
+    path: '/api/public/drive-oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDiscoverDailyRoute =
   ApiPublicHooksDiscoverDailyRouteImport.update({
     id: '/api/public/hooks/discover-daily',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/submissions/$id': typeof AuthenticatedSubmissionsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/api/public/calendar-feed': typeof ApiPublicCalendarFeedRoute
+  '/api/public/drive-oauth/callback': typeof ApiPublicDriveOauthCallbackRoute
   '/api/public/hooks/discover-daily': typeof ApiPublicHooksDiscoverDailyRoute
   '/api/public/hooks/email-digest': typeof ApiPublicHooksEmailDigestRoute
   '/api/public/hooks/monitor-weekly': typeof ApiPublicHooksMonitorWeeklyRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/submissions/$id': typeof AuthenticatedSubmissionsIdRoute
   '/workspace/$id': typeof AuthenticatedWorkspaceIdRoute
   '/api/public/calendar-feed': typeof ApiPublicCalendarFeedRoute
+  '/api/public/drive-oauth/callback': typeof ApiPublicDriveOauthCallbackRoute
   '/api/public/hooks/discover-daily': typeof ApiPublicHooksDiscoverDailyRoute
   '/api/public/hooks/email-digest': typeof ApiPublicHooksEmailDigestRoute
   '/api/public/hooks/monitor-weekly': typeof ApiPublicHooksMonitorWeeklyRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/submissions_/$id': typeof AuthenticatedSubmissionsIdRoute
   '/_authenticated/workspace_/$id': typeof AuthenticatedWorkspaceIdRoute
   '/api/public/calendar-feed': typeof ApiPublicCalendarFeedRoute
+  '/api/public/drive-oauth/callback': typeof ApiPublicDriveOauthCallbackRoute
   '/api/public/hooks/discover-daily': typeof ApiPublicHooksDiscoverDailyRoute
   '/api/public/hooks/email-digest': typeof ApiPublicHooksEmailDigestRoute
   '/api/public/hooks/monitor-weekly': typeof ApiPublicHooksMonitorWeeklyRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/submissions/$id'
     | '/workspace/$id'
     | '/api/public/calendar-feed'
+    | '/api/public/drive-oauth/callback'
     | '/api/public/hooks/discover-daily'
     | '/api/public/hooks/email-digest'
     | '/api/public/hooks/monitor-weekly'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/submissions/$id'
     | '/workspace/$id'
     | '/api/public/calendar-feed'
+    | '/api/public/drive-oauth/callback'
     | '/api/public/hooks/discover-daily'
     | '/api/public/hooks/email-digest'
     | '/api/public/hooks/monitor-weekly'
@@ -289,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/submissions_/$id'
     | '/_authenticated/workspace_/$id'
     | '/api/public/calendar-feed'
+    | '/api/public/drive-oauth/callback'
     | '/api/public/hooks/discover-daily'
     | '/api/public/hooks/email-digest'
     | '/api/public/hooks/monitor-weekly'
@@ -300,6 +313,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicCalendarFeedRoute: typeof ApiPublicCalendarFeedRoute
+  ApiPublicDriveOauthCallbackRoute: typeof ApiPublicDriveOauthCallbackRoute
   ApiPublicHooksDiscoverDailyRoute: typeof ApiPublicHooksDiscoverDailyRoute
   ApiPublicHooksEmailDigestRoute: typeof ApiPublicHooksEmailDigestRoute
   ApiPublicHooksMonitorWeeklyRoute: typeof ApiPublicHooksMonitorWeeklyRoute
@@ -434,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCalendarFeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/drive-oauth/callback': {
+      id: '/api/public/drive-oauth/callback'
+      path: '/api/public/drive-oauth/callback'
+      fullPath: '/api/public/drive-oauth/callback'
+      preLoaderRoute: typeof ApiPublicDriveOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/discover-daily': {
       id: '/api/public/hooks/discover-daily'
       path: '/api/public/hooks/discover-daily'
@@ -507,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicCalendarFeedRoute: ApiPublicCalendarFeedRoute,
+  ApiPublicDriveOauthCallbackRoute: ApiPublicDriveOauthCallbackRoute,
   ApiPublicHooksDiscoverDailyRoute: ApiPublicHooksDiscoverDailyRoute,
   ApiPublicHooksEmailDigestRoute: ApiPublicHooksEmailDigestRoute,
   ApiPublicHooksMonitorWeeklyRoute: ApiPublicHooksMonitorWeeklyRoute,

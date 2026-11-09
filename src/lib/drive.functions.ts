@@ -1,59 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireManagerAuth } from "@/integrations/supabase/auth-middleware";
 import type { Cursor } from "@/lib/drive-cursor.server";
+import { ROOT_FOLDER_ID } from "@/lib/drive-targets";
 
-const GOOGLE_DRIVE_API = "https://www.googleapis.com/drive/v3";
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
-
-function resolveDriveRequest(
-  path: string,
-  params: URLSearchParams = new URLSearchParams(),
-): { url: string; headers: Record<string, string> } {
-  const driveKey = process.env["GOOGLE_DRIVE_API_KEY"];
-  const lovableKey = process.env["LOVABLE_API_KEY"];
-
-  params.set("supportsAllDrives", "true");
-
-  if (driveKey && (!lovableKey || driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer "))) {
-    if (driveKey.startsWith("ya29.") || driveKey.startsWith("Bearer ")) {
-      const token = driveKey.replace(/^Bearer\s+/i, "");
-      return {
-        url: `${GOOGLE_DRIVE_API}${path}?${params.toString()}`,
-        headers: { Authorization: `Bearer ${token}` },
-      };
-    }
-    params.set("key", driveKey);
-    return {
-      url: `${GOOGLE_DRIVE_API}${path}?${params.toString()}`,
-      headers: {},
-    };
-  }
-
-  if (lovableKey && driveKey) {
-    return {
-      url: `${GATEWAY_URL}${path}?${params.toString()}`,
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": driveKey,
-      },
-    };
-  }
-
-  if (driveKey) {
-    params.set("key", driveKey);
-    return {
-      url: `${GOOGLE_DRIVE_API}${path}?${params.toString()}`,
-      headers: {},
-    };
-  }
-
-  throw new Error(
-    "Google Drive is not connected yet. Add GOOGLE_DRIVE_API_KEY in workspace settings.",
-  );
+async function driveGet(path: string, params: URLSearchParams): Promise<Response> {
+  const { driveClient } = await import("@/lib/drive-connection.server");
+  return driveClient().fetch(path, params);
 }
-
-/** Only this Drive folder (and its subfolders) is indexed into the Content Library. */
-const ROOT_FOLDER_ID = "1NYiV7rYlEB2-ccPaFJf8XvPkjP2h-cYc";
 
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
@@ -107,8 +60,7 @@ async function assertInsideRoot(folderId: string): Promise<void> {
   let current = folderId;
   for (let depth = 0; depth < 12; depth++) {
     const params = new URLSearchParams({ fields: "id,parents" });
-    const req = resolveDriveRequest(`/files/${encodeURIComponent(current)}`, params);
-    const res = await fetch(req.url, { headers: req.headers });
+    const res = await driveGet(`/files/${encodeURIComponent(current)}`, params);
     if (!res.ok) {
       throw new Error("That Drive folder could not be verified, so it was not read.");
     }
@@ -152,15 +104,14 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
     pageToken: input?.pageToken ?? null,
   }))
   .handler(async ({ data, context }): Promise<DriveSyncPage> => {
-    if (!process.env["GOOGLE_DRIVE_API_KEY"]) {
+    const { driveClient, NOT_CONNECTED_MESSAGE } = await import("@/lib/drive-connection.server");
+    if (!(await driveClient().isConnected())) {
       return {
         scanned: 0,
         indexed: 0,
         skipped: 0,
         byCategory: {},
-        errors: [
-          "Google Drive is not connected yet. Add GOOGLE_DRIVE_API_KEY in workspace settings to enable live Drive sync.",
-        ],
+        errors: [NOT_CONNECTED_MESSAGE],
         nextPageToken: null,
       };
     }
@@ -199,10 +150,7 @@ export const syncDriveLibrary = createServerFn({ method: "POST" })
     });
     if (cursor.pageToken) params.set("pageToken", cursor.pageToken);
 
-    const req = resolveDriveRequest("/files", params);
-    const res = await fetch(req.url, {
-      headers: req.headers,
-    });
+    const res = await driveGet("/files", params);
     if (!res.ok) {
       const body = await res.text();
       console.error(`Drive request failed [${res.status}]: ${body}`);

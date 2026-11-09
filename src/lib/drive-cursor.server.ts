@@ -14,7 +14,7 @@ export function freshCursor(rootFolderId: string): Cursor {
   return { queue: [rootFolderId], pageToken: null, startedAt: new Date().toISOString() };
 }
 
-const toB64Url = (bytes: Uint8Array) =>
+export const toB64Url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -26,18 +26,17 @@ const toB64Url = (bytes: Uint8Array) =>
  * key (job_secrets/drive-cursor, created on first use). A client can neither
  * forge a cursor nor move `startedAt` into the future to wipe the library.
  */
-async function signingKey(db: AppDb): Promise<CryptoKey> {
+export async function signingKey(db: AppDb, name = "drive-cursor"): Promise<CryptoKey> {
   const read = async () =>
-    (await db.from("job_secrets").select("secret").eq("name", "drive-cursor").maybeSingle()).data
-      ?.secret;
+    (await db.from("job_secrets").select("secret").eq("name", name).maybeSingle()).data?.secret;
   let secret = await read();
   if (!secret) {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
     // Create-if-absent: if two requests race, the loser's insert fails and both read the winner's.
-    await db.from("job_secrets").insert({ name: "drive-cursor", secret: toB64Url(bytes) });
+    await db.from("job_secrets").insert({ name, secret: toB64Url(bytes) });
     secret = await read();
   }
-  if (!secret) throw new Error("Could not load the Drive cursor signing key.");
+  if (!secret) throw new Error(`Could not load the ${name} signing key.`);
   return crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
