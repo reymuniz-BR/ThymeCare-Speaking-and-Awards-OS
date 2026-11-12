@@ -12,6 +12,8 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 // const because the wrapper's type omits traceDeps but forwards it to nitro.
 const nitro = {
   preset: "node-server",
+  // Google AI Studio publishes from dist/: static files at the top, the server under dist/server.
+  output: { dir: "dist", publicDir: "dist", serverDir: "dist/server" },
   traceDeps: [
     "firebase-admin",
     "firebase",
