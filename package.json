@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host 0.0.0.0 --port 3000",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "vite build && node scripts/postbuild.js",
+    "build:dev": "vite build --mode development && node scripts/postbuild.js",
+    "start": "node dist/server/index.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
