@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AccessList } from "@/components/access-list";
 import { TrackerSyncCard } from "@/components/tracker-sync-card";
+import { DriveConnectionCard } from "@/components/drive-connection-card";
 
 import { Chip } from "@/components/chip";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +100,7 @@ function SettingsPage() {
     >
       <div className="mb-4 space-y-4">
         <AccessList />
+        <DriveConnectionCard />
         <TrackerSyncCard />
       </div>
 

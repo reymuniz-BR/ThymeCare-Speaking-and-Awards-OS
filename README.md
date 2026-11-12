@@ -42,6 +42,17 @@ npm run seed -- job-secrets         # creates any missing hook/calendar secrets 
 
 Scheduled hooks (`/api/public/hooks/*`) authenticate with a secret in `x-job-secret` (or `x-monitor-secret`, or a bearer token): the stored per-job secret from `job_secrets/<job>` or `MONITOR_WEBHOOK_SECRET`. With neither configured they return 503; scheduler headers are not credentials. `monitor-weekly` takes the environment secret only. Deploy `firestore.rules` yourself (`firebase deploy --only firestore:rules`); nothing in this repo does it.
 
+## Google Drive connection
+
+App sign-in only proves who someone is and never asks for Drive. The content library, master messaging doc and master tracker are read through one shared connection: a manager or admin clicks **Connect Google Drive** in Settings once, and the refresh token is stored server-side in `integration_tokens/google_drive` (clients are denied by `firestore.rules`). Scheduled runs use it with nobody signed in. **Check file access** on the same card confirms the connected account can open all three.
+
+The deployment needs three settings, none of them committed to this repo:
+
+- `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`: a Web application OAuth client in the app's Google Cloud project.
+- `APP_BASE_URL`: the published address, with no trailing slash. The client's authorized redirect URI must be `<APP_BASE_URL>/api/public/drive-oauth/callback`.
+
+The Drive API must be enabled on the project. Keep the OAuth consent screen External and in production: Internal admits only one Workspace, and test mode expires the saved login every 7 days.
+
 ## Data layer
 
 `supabase.from(...)` in `src/integrations/supabase/client.ts` (browser) and `supabaseAdmin.from(...)` in `client.server.ts` (server) are one typed, PostgREST-flavoured query builder (`src/integrations/supabase/firestore/`) over two backends: the Firestore web SDK and firebase-admin. Typing comes from `types.ts`; `schema.generated.ts` (regenerate with `npm run gen:schema`) carries the columns and foreign keys the runtime needs for embedded selects. Filtering beyond equality, ordering, limits, joins, column defaults, unique keys, cascades and the old trigger behaviour (answer versions, opportunity date sync, activity log) are implemented in the builder so both backends behave the same. `npm run test:db` runs its tests against an in-memory backend.
