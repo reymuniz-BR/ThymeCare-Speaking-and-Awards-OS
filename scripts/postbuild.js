@@ -35,12 +35,12 @@ const htmlContent = `<!DOCTYPE html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Thyme Care Speaking and Awards OS</title>
+    <title>Podium</title>
     <meta
       name="description"
       content="Central operating system for tracking speaking opportunities, conferences, awards, and submissions."
     />
-    <meta property="og:title" content="Thyme Care Speaking and Awards OS" />
+    <meta property="og:title" content="Podium" />
     <meta
       property="og:description"
       content="Central operating system for tracking speaking opportunities, conferences, awards, and submissions."

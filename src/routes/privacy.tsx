@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { pageTitle, productName, workspaceConfig } from "@/lib/workspace";
+import { pageTitle, productName } from "@/lib/workspace";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -22,8 +22,8 @@ function PrivacyPage() {
 
       <section className="space-y-3">
         <p>
-          This is an internal workspace for the team that runs {workspaceConfig().name}&rsquo;s
-          speaking and awards program. Only people an administrator has approved can use it.
+          This is an internal workspace for the team that runs its speaking and awards programs.
+          Only people an administrator has approved can use it.
         </p>
 
         <h2 className="pt-4 font-semibold">What it collects</h2>

@@ -70,8 +70,8 @@ const candidateSchema = {
 };
 
 /** The specialist research agents. Each owns one lane of the landscape. */
-export { THYME_CARE_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
-import { THYME_CARE_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
+export { DEFAULT_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
+import { DEFAULT_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
 import { aCompany } from "@/lib/workspace";
 
 async function runAgent(

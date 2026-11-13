@@ -142,4 +142,4 @@ export const DUPLICATE_CONFIRMED = 0.85;
 export const DUPLICATE_SUSPECTED = 0.6;
 
 /** @deprecated Read focus areas from the workspace (workspaceConfig().discovery.focusAreas). */
-export { THYME_CARE_FOCUS_AREAS as FOCUS_AREAS } from "@/lib/workspace";
+export { DEFAULT_FOCUS_AREAS as FOCUS_AREAS } from "@/lib/workspace";
