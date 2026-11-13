@@ -33,7 +33,7 @@ export const discoverOpportunities = createServerFn({ method: "POST" })
     const today = new Date().toISOString().slice(0, 10);
 
     const { runDiscoverySwarm } = await import("@/lib/discovery-agents.server");
-    const { candidates, agentsRun } = await runDiscoverySwarm({
+    const { candidates, agentsRun, agentsFailed } = await runDiscoverySwarm({
       brief: data.brief,
       focus,
       existingNames: data.existing.slice(0, 400).map((e) => e.name),
@@ -143,7 +143,7 @@ export const discoverOpportunities = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("discoveries").insert(rows as never);
       if (error) throw new Error(error.message);
     }
-    return { added: rows.length, suppressed, flagged, agents: agentsRun };
+    return { added: rows.length, suppressed, flagged, agents: agentsRun, agentsFailed };
   });
 
 export const repurposeAnswer = createServerFn({ method: "POST" })

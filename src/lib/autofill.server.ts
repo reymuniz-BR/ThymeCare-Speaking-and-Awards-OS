@@ -65,8 +65,8 @@ const BROWSER_UA =
 async function fetchPageText(url: string): Promise<string> {
   // 1) Direct fetch with browser-like headers.
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
+    const { safeFetch } = await import("@/lib/safe-url.server");
+    const res = await safeFetch(url, {
       headers: {
         "User-Agent": BROWSER_UA,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -81,6 +81,11 @@ async function fetchPageText(url: string): Promise<string> {
   } catch {
     /* fall through to reader proxy */
   }
+
+  // The reader proxy fetches on our behalf, so the address must pass the same
+  // public-host check before it is handed over.
+  const { assertPublicHttpUrl } = await import("@/lib/safe-url.server");
+  assertPublicHttpUrl(url);
 
   // 2) Many sites block server fetches (403/bot walls) — retry via a text reader proxy.
   try {
@@ -110,7 +115,7 @@ export async function autofillFromUrl(url: string): Promise<AutofillResult> {
       {
         role: "system",
         content:
-          "You extract structured details about awards, rankings and speaking/conference opportunities for a healthcare technology company's communications team. Use only facts stated on the page. Never invent or infer dates — leave a date empty unless it is written on the page. Dates must be YYYY-MM-DD. Today is " +
+          "You extract structured details about awards, rankings and speaking/conference opportunities for a communications team. Use only facts stated on the page. Never invent or infer dates — leave a date empty unless it is written on the page. Dates must be YYYY-MM-DD. Today is " +
           new Date().toISOString().slice(0, 10) +
           ". Use type 'speaking' for conferences, calls for speakers and panels; 'award' for awards, rankings and recognition lists.",
       },
@@ -118,6 +123,12 @@ export async function autofillFromUrl(url: string): Promise<AutofillResult> {
     ],
     schema as unknown as object,
   )) as Record<string, unknown>;
+
+  if (!str(raw["name"])) {
+    throw new Error(
+      "The page was read, but no program details were found on it. Try the program's own page or its application link.",
+    );
+  }
 
   const type = raw["type"] === "speaking" ? "speaking" : "award";
   const dt = str(raw["deadline_type"]);

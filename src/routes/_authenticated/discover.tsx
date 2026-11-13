@@ -165,6 +165,11 @@ function DiscoverPage() {
         },
       });
       invalidate(["discoveries"]);
+      if (result.agentsFailed) {
+        toast.warning(
+          `${result.agentsFailed} of ${result.agents + result.agentsFailed} research lanes failed; results are partial. Try again shortly.`,
+        );
+      }
       if (result.added === 0) {
         toast.info(
           result.suppressed
