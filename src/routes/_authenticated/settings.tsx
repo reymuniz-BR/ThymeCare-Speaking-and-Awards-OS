@@ -14,17 +14,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
-      { title: "Taxonomy settings — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Taxonomy settings") },
       {
         name: "description",
         content:
           "Configure statuses, priorities, deadline types, recommendations and outcomes used across the opportunity database.",
       },
-      { property: "og:title", content: "Taxonomy settings — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Taxonomy settings") },
       {
         property: "og:description",
         content: "Program taxonomies are configurable, not hardcoded.",

@@ -11,6 +11,7 @@ import type { AppDb } from "@/integrations/supabase/firestore/builder";
 import { sendEmail } from "@/lib/email.server";
 import { teamRecipients } from "@/lib/team.server";
 import { weekStart } from "@/lib/digest";
+import { productName } from "@/lib/workspace";
 
 export type DiscoverEmailResult = {
   recipients: string[];
@@ -67,7 +68,7 @@ export function renderDiscoverEmail(
     : "Discover: no new opportunities this week";
 
   const lines: string[] = [];
-  lines.push("Weekly Discover scan — Thyme Care Speaking & Awards OS", "");
+  lines.push(`Weekly Discover scan — ${productName()}`, "");
   lines.push(`Focus this week: ${brief}`, "");
 
   if (!candidates.length) {

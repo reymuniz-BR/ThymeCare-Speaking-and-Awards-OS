@@ -28,6 +28,7 @@ import { CopyCheck, ExternalLink, Library, Loader2, Search, Sparkles, X } from "
 import { ContentMatchDialog } from "@/components/content-match-dialog";
 import { attachmentNote } from "@/lib/content-match";
 import type { AttachedContent } from "@/lib/content-match";
+import { workspaceConfig, pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/discover")({
   head: () => ({
@@ -35,10 +36,9 @@ export const Route = createFileRoute("/_authenticated/discover")({
       { title: "Discover — Opportunity Discovery Inbox" },
       {
         name: "description",
-        content:
-          "AI-assisted discovery of healthcare technology awards, leadership lists, rankings and calls for speakers, de-duplicated against the tracker and triaged in an inbox.",
+        content: `AI-assisted discovery of ${workspaceConfig().discovery.domainLabel} awards, leadership lists, rankings and calls for speakers, de-duplicated against the tracker and triaged in an inbox.`,
       },
-      { property: "og:title", content: "Discover — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Discover") },
       {
         property: "og:description",
         content:
@@ -51,33 +51,7 @@ export const Route = createFileRoute("/_authenticated/discover")({
   component: DiscoverPage,
 });
 
-const PRESETS: { label: string; brief: string }[] = [
-  {
-    label: "Awards & rankings",
-    brief:
-      "Healthcare, digital health and health technology company awards, innovation awards and industry rankings with submission deadlines in the next 9 months.",
-  },
-  {
-    label: "Calls for speakers",
-    brief:
-      "Open calls for speakers, speaker nominations and conference programming opportunities at US healthcare, payer, provider and digital health conferences.",
-  },
-  {
-    label: "Executive & leadership lists",
-    brief:
-      "Executive awards, healthcare leadership lists and 'most influential' rankings recognizing individual healthcare technology executives.",
-  },
-  {
-    label: "Fast-growth lists",
-    brief:
-      "Fast-growth and high-performing company lists open to venture-backed healthcare technology and value-based care companies.",
-  },
-  {
-    label: "Oncology & value-based care",
-    brief:
-      "Awards, rankings and speaking opportunities focused on oncology and cancer care, value-based care and employer healthcare innovation.",
-  },
-];
+const PRESETS = workspaceConfig().discovery.presets;
 
 type Status = "new" | "researching" | "reviewed" | "promoted" | "dismissed" | "duplicate";
 

@@ -1,4 +1,5 @@
 /** Server-only: pull application questions out of a CFP page or pasted text. */
+import { aCompany } from "@/lib/workspace";
 
 function stripHtml(html: string): string {
   return html
@@ -76,7 +77,8 @@ export async function extractQuestionsFrom(input: {
       {
         role: "system",
         content:
-          "You extract the application questions from award and speaking-opportunity submission forms for a healthcare technology company's communications team. Return each question as the application words it. Never invent questions that are not present. Only record a word or character limit when the source states one. Ignore navigation, marketing copy, eligibility prose and fee tables — capture only fields the applicant must write an answer for.",
+          `You extract the application questions from award and speaking-opportunity submission forms for ${aCompany()}'s communications team.` +
+          " Return each question as the application words it. Never invent questions that are not present. Only record a word or character limit when the source states one. Ignore navigation, marketing copy, eligibility prose and fee tables — capture only fields the applicant must write an answer for.",
       },
       { role: "user", content: body },
     ],

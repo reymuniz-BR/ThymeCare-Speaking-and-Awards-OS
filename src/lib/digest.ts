@@ -8,6 +8,7 @@
 
 import { daysUntil, formatDate } from "@/lib/program";
 import { bestDeadline, isClosed } from "@/lib/opportunity-view";
+import { workspaceConfig } from "@/lib/workspace";
 
 /** Deadline horizon covered by the Monday digest. */
 export const DIGEST_HORIZON_DAYS = 14;
@@ -88,7 +89,7 @@ export function weeklyDigestItemCount(data: WeeklyDigestData): number {
 
 /** Plain-text body of the Monday digest. */
 export function renderWeeklyDigest(data: WeeklyDigestData, appUrl: string): string {
-  const lines: string[] = ["Thyme Care Speaking & Awards — your week", ""];
+  const lines: string[] = [`${workspaceConfig().name} Speaking & Awards — your week`, ""];
 
   lines.push(`DEADLINES IN THE NEXT ${DIGEST_HORIZON_DAYS} DAYS (${data.deadlines.length})`);
   if (!data.deadlines.length) lines.push("  Nothing due in this window.");

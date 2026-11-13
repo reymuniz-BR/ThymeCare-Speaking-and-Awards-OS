@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Trophy } from "lucide-react";
+import { workspaceConfig } from "@/lib/workspace";
 
 type Props = {
   open: boolean;
@@ -54,7 +55,7 @@ export function WinChecklistDialog({
   const [createProofPoint, setCreateProofPoint] = useState(true);
   const [proofTitle, setProofTitle] = useState(defaultTitle);
   const [proofContent, setProofContent] = useState(
-    `Thyme Care was named a ${year} winner of ${opportunityName ?? "this award"}.`,
+    `${workspaceConfig().name} was named a ${year} winner of ${opportunityName ?? "this award"}.`,
   );
   const [saving, setSaving] = useState(false);
 

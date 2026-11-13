@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:db": "node --test src/integrations/supabase/firestore/builder.test.ts src/lib/seed.test.ts src/lib/drive-cursor.test.ts src/lib/drive-connection.test.ts src/lib/ai-gateway.test.ts src/lib/safe-url.test.ts",
+    "test:db": "node --test src/integrations/supabase/firestore/builder.test.ts src/lib/seed.test.ts src/lib/drive-cursor.test.ts src/lib/drive-connection.test.ts src/lib/ai-gateway.test.ts src/lib/safe-url.test.ts src/lib/workspace.test.ts",
     "seed": "node scripts/seed.mjs",
     "gen:schema": "node scripts/gen-schema.mjs"
   },

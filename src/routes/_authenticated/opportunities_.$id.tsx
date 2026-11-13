@@ -41,17 +41,18 @@ import { APPLICATION_STAGES, isClosed } from "@/lib/opportunity-view";
 import { cloneToNextCycle } from "@/lib/clone-cycle";
 import { memberName, ownerLabel } from "@/lib/team";
 import { CLIENT_APPROVALS, CLIENT_APPROVAL_LABEL } from "@/lib/budget";
+import { workspaceConfig, pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/opportunities_/$id")({
   head: () => ({
     meta: [
-      { title: "Opportunity detail — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Opportunity detail") },
       {
         name: "description",
         content:
           "All fields, deadlines, monitoring data, activity history and related submission materials for a tracked opportunity.",
       },
-      { property: "og:title", content: "Opportunity detail — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Opportunity detail") },
       {
         property: "og:description",
         content: "Full record, timeline and submission history for this opportunity.",
@@ -115,7 +116,7 @@ function OpportunityDetail() {
   function dateEvent(label: string, date: string | null, timed = false): CalendarEvent | undefined {
     if (!date) return undefined;
     return {
-      uid: `${id}-${label.toLowerCase().replace(/\s+/g, "-")}@thymecare-awards-os`,
+      uid: `${id}-${label.toLowerCase().replace(/\s+/g, "-")}@${workspaceConfig().calendarUidDomain}`,
       title: `${label}: ${oppName}`,
       date,
       time: timed ? cutoffTime : null,

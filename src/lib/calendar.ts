@@ -6,6 +6,7 @@
  * apart and the team submits against the real cut-off. When no time is set the
  * milestone is treated as an all-day event.
  */
+import { workspaceConfig } from "@/lib/workspace";
 
 export const TIMEZONE_OPTIONS = [
   { value: "America/Los_Angeles", label: "Pacific (PT)" },
@@ -164,13 +165,13 @@ export function toVEvent(e: CalendarEvent, now = new Date()): string[] {
 
 export function buildIcs(
   events: CalendarEvent[],
-  calendarName = "Thyme Care Program Dates",
+  calendarName = `${workspaceConfig().name} Program Dates`,
 ): string {
   const now = new Date();
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Thyme Care//Speaking & Awards OS//EN",
+    `PRODID:-//${workspaceConfig().name}//${workspaceConfig().productLabel}//EN`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeIcs(calendarName)}`,

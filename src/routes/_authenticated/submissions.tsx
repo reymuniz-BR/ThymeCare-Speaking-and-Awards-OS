@@ -9,17 +9,18 @@ import type { PipelineRow, PipelineSegment } from "@/lib/submission-pipeline";
 import { URGENCY_CLASS, countdownLabel, formatDate, labelize, urgencyOf } from "@/lib/program";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/submissions")({
   head: () => ({
     meta: [
-      { title: "Submissions — Thyme Care Speaking & Awards" },
+      { title: pageTitle("Submissions") },
       {
         name: "description",
         content:
           "Every award entry and speaking abstract the team is drafting, reviewing or has already submitted.",
       },
-      { property: "og:title", content: "Submissions — Thyme Care Speaking & Awards" },
+      { property: "og:title", content: pageTitle("Submissions") },
       {
         property: "og:description",
         content: "What we are working on and what we have already sent.",

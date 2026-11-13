@@ -19,17 +19,18 @@ import { countdownLabel, daysUntil, formatDate, labelize } from "@/lib/program";
 import { budgetSummary } from "@/lib/budget";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Command center — Thyme Care Speaking & Awards" },
+      { title: pageTitle("Command center") },
       {
         name: "description",
         content:
           "Program signals, the deadline runway, active submissions and new opportunities awaiting a decision.",
       },
-      { property: "og:title", content: "Command center — Thyme Care Speaking & Awards" },
+      { property: "og:title", content: pageTitle("Command center") },
       {
         property: "og:description",
         content: "The comms team's daily operating view for speaking and award opportunities.",

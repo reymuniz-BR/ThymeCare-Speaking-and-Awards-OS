@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { pageTitle, workspaceConfig } from "@/lib/workspace";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -13,13 +14,13 @@ export const Route = createFileRoute("/auth")({
     search["denied"] ? { denied: true } : {},
   head: () => ({
     meta: [
-      { title: "Sign in — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Sign in") },
       {
         name: "description",
         content:
           "Sign in to the speaking, conference and awards program workspace for the communications team.",
       },
-      { property: "og:title", content: "Sign in — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Sign in") },
       {
         property: "og:description",
         content: "Internal workspace for tracking speaking opportunities, awards and submissions.",
@@ -119,7 +120,8 @@ function AuthPage() {
             T
           </div>
           <span className="text-sm font-semibold text-sidebar-foreground">
-            Thyme Care <span className="text-sidebar-foreground/55">Speaking &amp; Awards OS</span>
+            {workspaceConfig().name}{" "}
+            <span className="text-sidebar-foreground/55">{workspaceConfig().productLabel}</span>
           </span>
         </div>
         <div className="max-w-md">

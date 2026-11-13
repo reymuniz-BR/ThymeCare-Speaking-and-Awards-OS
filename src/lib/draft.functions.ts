@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { looksNumeric, isStale } from "@/lib/strategy";
 import type { DraftResult } from "@/lib/draft";
+import { aCompany } from "@/lib/workspace";
 
 const draftSchema = {
   type: "object",
@@ -140,7 +141,7 @@ export const draftAnswer = createServerFn({ method: "POST" })
         {
           role: "system",
           content: [
-            "You draft award and speaking application answers for a healthcare technology company, working for its PR team.",
+            `You draft award and speaking application answers for ${aCompany()}, working for its PR team.`,
             "You may ONLY use facts contained in the numbered approved source material provided.",
             "Sources marked CANONICAL APPROVED FACT come from the Messaging & Proof Point Bank: they are the current, approved wording and figures. Prefer them over any older historical submission answer whenever both cover the same ground, and never contradict them. Historical submissions are precedent and narrative inspiration only.",
             "NEVER invent or estimate a metric, customer result, patient or member number, executive quote, job title, award, ranking, certification, partnership or company claim. If it is not in the sources, it does not exist — list it under gaps instead.",

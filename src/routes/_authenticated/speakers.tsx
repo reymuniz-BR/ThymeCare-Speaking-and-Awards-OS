@@ -13,17 +13,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useInvalidate } from "@/lib/hooks";
 import { parseTopics, useSpeakerUsage, useSpeakers, type SpeakerRow } from "@/lib/speakers";
+import { workspaceConfig, pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/speakers")({
   head: () => ({
     meta: [
-      { title: "Speakers — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Speakers") },
       {
         name: "description",
-        content:
-          "Directory of Thyme Care executives, subject matter experts and external co-presenters with bios, topics and availability.",
+        content: `Directory of ${workspaceConfig().name} executives, subject matter experts and external co-presenters with bios, topics and availability.`,
       },
-      { property: "og:title", content: "Speakers — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Speakers") },
       {
         property: "og:description",
         content: "Manage exec and SME bios, topics and availability for speaking submissions.",
@@ -182,7 +182,7 @@ function SpeakersPage() {
                       {s.is_external ? (
                         <Chip tone="warning">External</Chip>
                       ) : (
-                        <Chip tone="info">Thyme Care</Chip>
+                        <Chip tone="info">{workspaceConfig().name}</Chip>
                       )}
                       {usage[s.id] ? (
                         <Chip tone="neutral">
@@ -285,7 +285,7 @@ function SpeakersPage() {
                     checked={draft.is_external}
                     onChange={(e) => setDraft((d) => ({ ...d, is_external: e.target.checked }))}
                   />
-                  External co-presenter (not Thyme Care)
+                  External co-presenter (not {workspaceConfig().name})
                 </label>
                 <div>
                   <Label className="mb-1.5 block text-[12px]">Organization</Label>
@@ -293,7 +293,9 @@ function SpeakersPage() {
                     value={draft.organization}
                     onChange={(e) => setDraft((d) => ({ ...d, organization: e.target.value }))}
                     className="h-9"
-                    placeholder={draft.is_external ? "Partner health plan" : "Thyme Care"}
+                    placeholder={
+                      draft.is_external ? workspaceConfig().partnerExample : workspaceConfig().name
+                    }
                   />
                 </div>
                 <div>

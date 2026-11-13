@@ -6,6 +6,7 @@
  * write *proposed* change records. Nothing on the opportunity row is ever
  * silently overwritten — only monitoring metadata is updated automatically.
  */
+import { aCompany } from "@/lib/workspace";
 
 export const APPLICATION_STATES = [
   "not_announced",
@@ -107,7 +108,8 @@ async function extract(pageText: string, opp: OpportunityLike): Promise<Extracti
       {
         role: "system",
         content:
-          "You monitor awards and speaking-opportunity websites for a healthcare technology company's communications team. Extract only facts stated on the page. Never guess or infer a date that is not written there — leave the field empty instead. Use confidence 'confirmed' only when the page states the fact explicitly and unambiguously for the current cycle; use 'likely' when it is implied or refers to a prior cycle; otherwise 'uncertain'. Today's date is " +
+          `You monitor awards and speaking-opportunity websites for ${aCompany()}'s communications team.` +
+          " Extract only facts stated on the page. Never guess or infer a date that is not written there — leave the field empty instead. Use confidence 'confirmed' only when the page states the fact explicitly and unambiguously for the current cycle; use 'likely' when it is implied or refers to a prior cycle; otherwise 'uncertain'. Today's date is " +
           new Date().toISOString().slice(0, 10) +
           ".",
       },

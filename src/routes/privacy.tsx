@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { pageTitle, productName, workspaceConfig } from "@/lib/workspace";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Privacy") },
       {
         name: "description",
         content: "What the Speaking & Awards workspace collects and how it uses Google data.",
@@ -17,12 +18,12 @@ function PrivacyPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 text-[14px] leading-relaxed">
       <h1 className="mb-1 text-xl font-semibold">Privacy</h1>
-      <p className="mb-8 text-muted-foreground">Thyme Care Speaking &amp; Awards OS</p>
+      <p className="mb-8 text-muted-foreground">{productName()}</p>
 
       <section className="space-y-3">
         <p>
-          This is an internal workspace for the team that runs Thyme Care&rsquo;s speaking and
-          awards program. Only people an administrator has approved can use it.
+          This is an internal workspace for the team that runs {workspaceConfig().name}&rsquo;s
+          speaking and awards program. Only people an administrator has approved can use it.
         </p>
 
         <h2 className="pt-4 font-semibold">What it collects</h2>

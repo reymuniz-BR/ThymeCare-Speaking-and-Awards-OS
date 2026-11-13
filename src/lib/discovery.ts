@@ -141,21 +141,5 @@ export function findDuplicate(
 export const DUPLICATE_CONFIRMED = 0.85;
 export const DUPLICATE_SUSPECTED = 0.6;
 
-/** The healthcare-technology themes discovery should stay anchored to. */
-export const FOCUS_AREAS = [
-  "healthcare",
-  "digital health",
-  "health technology",
-  "health tech innovation",
-  "value-based care",
-  "oncology / cancer care",
-  "healthcare AI",
-  "healthcare leadership",
-  "healthcare finance",
-  "employer healthcare",
-  "health plans / payers",
-  "care delivery",
-  "startups and growth companies",
-  "technology innovation",
-  "executive leadership",
-];
+/** @deprecated Read focus areas from the workspace (workspaceConfig().discovery.focusAreas). */
+export { THYME_CARE_FOCUS_AREAS as FOCUS_AREAS } from "@/lib/workspace";

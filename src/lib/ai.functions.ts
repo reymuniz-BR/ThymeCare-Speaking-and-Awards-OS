@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { aCompany } from "@/lib/workspace";
 
 async function callAI(messages: { role: string; content: string }[], schema?: object) {
   const { callAI: run } = await import("@/lib/ai-gateway.server");
@@ -168,7 +169,8 @@ export const repurposeAnswer = createServerFn({ method: "POST" })
       {
         role: "system",
         content:
-          "You are a senior communications writer at a healthcare technology company. You adapt previously approved submission content to new award and speaking applications. Preserve factual claims, metrics and executive voice exactly as written in the source material; never invent statistics, customers or dates. Write in a confident, specific, jargon-light professional register.",
+          `You are a senior communications writer at ${aCompany()}.` +
+          " You adapt previously approved submission content to new award and speaking applications. Preserve factual claims, metrics and executive voice exactly as written in the source material; never invent statistics, customers or dates. Write in a confident, specific, jargon-light professional register.",
       },
       {
         role: "user",

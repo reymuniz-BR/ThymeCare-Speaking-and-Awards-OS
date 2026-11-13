@@ -1,4 +1,5 @@
 /** Server-only: read an opportunity page and extract structured fields. */
+import { aCompany } from "@/lib/workspace";
 
 function stripHtml(html: string): string {
   return html
@@ -115,7 +116,8 @@ export async function autofillFromUrl(url: string): Promise<AutofillResult> {
       {
         role: "system",
         content:
-          "You extract structured details about awards, rankings and speaking/conference opportunities for a communications team. Use only facts stated on the page. Never invent or infer dates — leave a date empty unless it is written on the page. Dates must be YYYY-MM-DD. Today is " +
+          `You extract structured details about awards, rankings and speaking/conference opportunities for ${aCompany()}'s communications team.` +
+          " Use only facts stated on the page. Never invent or infer dates — leave a date empty unless it is written on the page. Dates must be YYYY-MM-DD. Today is " +
           new Date().toISOString().slice(0, 10) +
           ". Use type 'speaking' for conferences, calls for speakers and panels; 'award' for awards, rankings and recognition lists.",
       },
