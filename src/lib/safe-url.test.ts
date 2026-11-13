@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { describe, it } from "node:test";
-import { assertPublicHttpUrl, isPrivateAddress, safeFetch } from "./safe-url.server.ts";
+import { assertPublicHttpUrl, decodeBody, isPrivateAddress, safeFetch } from "./safe-url.server.ts";
 
 describe("safe-url", () => {
   it("classifies resolved addresses", () => {
@@ -27,6 +27,15 @@ describe("safe-url", () => {
     assert.throws(() => assertPublicHttpUrl("http://metadata.google.internal/"));
     assert.throws(() => assertPublicHttpUrl("http://169.254.169.254/"));
     assert.throws(() => assertPublicHttpUrl("file:///etc/passwd"));
+  });
+
+  it("caps the decompressed size, not just the wire size", async () => {
+    const zlib = await import("node:zlib");
+    const bomb = zlib.gzipSync(Buffer.alloc(20 * 1024 * 1024)); // tiny on the wire
+    assert.ok(bomb.length < 100_000);
+    assert.throws(() => decodeBody(bomb, "gzip", zlib), /too large/);
+    const ok = zlib.gzipSync(Buffer.from("hello"));
+    assert.equal(decodeBody(ok, "gzip", zlib).toString(), "hello");
   });
 
   it("refuses a hostname that resolves to loopback, even with a live server there", async () => {
