@@ -11,10 +11,6 @@ export type WorkspaceConfig = {
   id: string;
   /** Client name as shown in the app ("Thyme Care"). */
   name: string;
-  /** Product label shown beside the client name. */
-  productLabel: string;
-  /** One-letter mark for the brand tile. */
-  monogram: string;
   /**
    * How AI prompts describe the client, as a noun phrase that reads after
    * "a"/"an" is stripped, e.g. "healthcare technology company".
@@ -96,8 +92,6 @@ export const THYME_CARE_DISCOVERY_BEATS: DiscoveryBeat[] = [
 const THYME_CARE: WorkspaceConfig = {
   id: "thyme-care",
   name: "Thyme Care",
-  productLabel: "Speaking & Awards OS",
-  monogram: "T",
   companyKind: "healthcare technology company",
   partnerExample: "Partner health plan",
   drive: {
@@ -156,14 +150,21 @@ export function workspaceConfig(): WorkspaceConfig {
   return THYME_CARE;
 }
 
-/** "Opportunities — Thyme Care Speaking & Awards OS" */
-export function pageTitle(page: string, ws: WorkspaceConfig = workspaceConfig()): string {
-  return `${page} — ${ws.name} ${ws.productLabel}`;
+/** The product itself. Clients are workspaces inside it, never the brand. */
+export const PRODUCT = {
+  name: "Podium",
+  tagline: "Speaking & awards pipeline",
+  monogram: "P",
+} as const;
+
+/** "Opportunities — Podium" */
+export function pageTitle(page: string): string {
+  return `${page} — ${PRODUCT.name}`;
 }
 
-/** Full product name, e.g. "Thyme Care Speaking & Awards OS". */
-export function productName(ws: WorkspaceConfig = workspaceConfig()): string {
-  return `${ws.name} ${ws.productLabel}`;
+/** The product name, "Podium". */
+export function productName(): string {
+  return PRODUCT.name;
 }
 
 /** "a healthcare technology company" with the right article. */

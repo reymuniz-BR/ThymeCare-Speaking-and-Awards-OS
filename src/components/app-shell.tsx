@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { workspaceConfig } from "@/lib/workspace";
+import { PRODUCT, workspaceConfig } from "@/lib/workspace";
 
 /** The primary destinations. Everything else is secondary. */
 const NAV = [
@@ -77,12 +77,12 @@ export function AppShell({
         <div className="mx-auto flex w-full max-w-[1500px] items-center gap-4 px-6 py-2.5">
           <Link to="/dashboard" className="flex shrink-0 items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded bg-accent text-[13px] font-bold text-accent-foreground">
-              T
+              {PRODUCT.monogram}
             </div>
             <div className="leading-tight">
-              <div className="text-[13px] font-semibold">{workspaceConfig().name}</div>
+              <div className="text-[13px] font-semibold">{PRODUCT.name}</div>
               <div className="text-[9.5px] tracking-[0.14em] text-sidebar-foreground/60 uppercase">
-                Speaking &amp; Awards OS
+                {workspaceConfig().name}
               </div>
             </div>
           </Link>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { pageTitle, workspaceConfig } from "@/lib/workspace";
+import { PRODUCT, pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -117,11 +117,10 @@ function AuthPage() {
       <div className="hidden flex-col justify-between bg-sidebar p-12 lg:flex">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-            T
+            {PRODUCT.monogram}
           </div>
           <span className="text-sm font-semibold text-sidebar-foreground">
-            {workspaceConfig().name}{" "}
-            <span className="text-sidebar-foreground/55">{workspaceConfig().productLabel}</span>
+            {PRODUCT.name} <span className="text-sidebar-foreground/55">{PRODUCT.tagline}</span>
           </span>
         </div>
         <div className="max-w-md">

@@ -19,8 +19,8 @@ describe("workspace config", () => {
     assert.equal(ws.drive.messagingDocId, "1oCDR8IvkKXs4bFU3y0U9eh10VBkXndIabZkaw8pVQ3Q");
     assert.equal(ws.drive.trackerFileId, "1lr4-FbpgLjQOkjtQJz2w1A_qIb-DRdrI");
     assert.equal(ws.calendarUidDomain, "thymecare-awards-os");
-    assert.equal(productName(), "Thyme Care Speaking & Awards OS");
-    assert.equal(pageTitle("Speakers"), "Speakers — Thyme Care Speaking & Awards OS");
+    assert.equal(productName(), "Podium");
+    assert.equal(pageTitle("Speakers"), "Speakers — Podium");
     assert.equal(aCompany(), "a healthcare technology company");
     assert.ok(ws.discovery.beats.length >= 6 && ws.discovery.focusAreas.length >= 10);
   });
