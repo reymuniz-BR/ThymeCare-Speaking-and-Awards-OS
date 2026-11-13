@@ -34,46 +34,102 @@ export function activeModel(): string {
  * Where Gemini calls go.
  *
  * 1. A key in the app's own environment (GEMINI_SERVER_API_KEY, or
- *    GEMINI_API_KEY when the host provides it to the server) calls Google
- *    directly.
- * 2. On a Google AI Studio deployment the key lives only in AI Studio's proxy
- *    container, which shares the instance's localhost and injects the key on
- *    /api-proxy/**. The app container never sees it, so with no key we route
- *    through that proxy. GEMINI_PROXY_URL overrides the address.
+ *    GEMINI_API_KEY / GOOGLE_API_KEY when the host provides one) calls the
+ *    Gemini API directly.
+ * 2. On Cloud Run with no key: Vertex AI in the app's own Google Cloud
+ *    project, authenticated as the service's account and billed to that
+ *    project's pay-as-you-go billing. No key exists to leak or run dry.
+ *    Needs the Vertex AI API enabled and roles/aiplatform.user on the runtime
+ *    service account. GEMINI_DISABLE_VERTEX=1 skips this route.
+ * 3. Otherwise AI Studio's key proxy on localhost, which injects AI Studio's
+ *    own key (and spends AI Studio's prepaid credits). GEMINI_PROXY_URL
+ *    overrides the address; GEMINI_DISABLE_PROXY=1 skips it.
  */
-function connection(): { key: string; baseUrl?: string } {
-  const key =
+type Route = "direct" | "vertex" | "ai-studio-proxy";
+type Connection =
+  | { route: "direct"; key: string }
+  | { route: "vertex"; project: string; location: string }
+  | { route: "ai-studio-proxy"; key: string; baseUrl: string };
+
+function envKey(): string | undefined {
+  return (
     process.env["GEMINI_SERVER_API_KEY"] ||
     process.env["GEMINI_API_KEY"] ||
-    process.env["GOOGLE_API_KEY"];
-  if (key) return { key };
-  const proxy = process.env["GEMINI_PROXY_URL"]?.trim() || "http://127.0.0.1:3001/api-proxy";
+    process.env["GOOGLE_API_KEY"] ||
+    undefined
+  );
+}
+
+function vertexWanted(): boolean {
+  if (process.env["GEMINI_DISABLE_VERTEX"] === "1") return false;
+  return process.env["GEMINI_USE_VERTEX"] === "1" || Boolean(process.env["K_SERVICE"]);
+}
+
+let cachedProject: string | null = null;
+async function cloudProject(): Promise<string> {
+  const fromEnv = process.env["GOOGLE_CLOUD_PROJECT"]?.trim();
+  if (fromEnv) return fromEnv;
+  if (cachedProject) return cachedProject;
+  try {
+    const res = await fetch(
+      "http://metadata.google.internal/computeMetadata/v1/project/project-id",
+      { headers: { "Metadata-Flavor": "Google" }, signal: AbortSignal.timeout(2000) },
+    );
+    if (!res.ok) throw new Error(`metadata ${res.status}`);
+    cachedProject = (await res.text()).trim();
+    return cachedProject;
+  } catch (err) {
+    console.error("[ai] could not read the Cloud project id", err);
+    throw new AIError(
+      "AI is not configured: could not find the Google Cloud project for Vertex AI.",
+      "not_configured",
+    );
+  }
+}
+
+async function connection(): Promise<Connection> {
+  const key = envKey();
+  if (key) return { route: "direct", key };
+  if (vertexWanted()) {
+    return {
+      route: "vertex",
+      project: await cloudProject(),
+      location: process.env["GOOGLE_CLOUD_LOCATION"]?.trim() || "global",
+    };
+  }
   if (process.env["GEMINI_DISABLE_PROXY"] === "1") {
     throw new AIError(
       "AI is not configured: set the GEMINI_SERVER_API_KEY secret.",
       "not_configured",
     );
   }
+  const baseUrl = process.env["GEMINI_PROXY_URL"]?.trim() || "http://127.0.0.1:3001/api-proxy";
   // The proxy replaces this placeholder with the real key.
-  return { key: "ai-studio-proxy", baseUrl: proxy };
+  return { route: "ai-studio-proxy", key: "ai-studio-proxy", baseUrl };
 }
 
-let client: { id: string; ai: GoogleGenAI } | null = null;
-function genai(): GoogleGenAI {
-  const { key, baseUrl } = connection();
-  const id = `${baseUrl ?? "direct"}:${key}`;
+let client: { id: string; ai: GoogleGenAI; route: Route } | null = null;
+async function genai(): Promise<{ ai: GoogleGenAI; route: Route }> {
+  const c = await connection();
+  const id = c.route === "vertex" ? `vertex:${c.project}:${c.location}` : `${c.route}:${c.key}`;
   if (!client || client.id !== id) {
-    client = {
-      id,
-      ai: new GoogleGenAI({ apiKey: key, ...(baseUrl ? { httpOptions: { baseUrl } } : {}) }),
-    };
+    const ai =
+      c.route === "vertex"
+        ? new GoogleGenAI({ vertexai: true, project: c.project, location: c.location })
+        : new GoogleGenAI({
+            apiKey: c.key,
+            ...(c.route === "ai-studio-proxy" ? { httpOptions: { baseUrl: c.baseUrl } } : {}),
+          });
+    client = { id, ai, route: c.route };
   }
-  return client.ai;
+  return { ai: client.ai, route: client.route };
 }
 
 /** Which route AI calls take, for logs and the settings page. Never the key. */
-export function aiRoute(): "direct" | "ai-studio-proxy" {
-  return connection().baseUrl ? "ai-studio-proxy" : "direct";
+export function aiRoute(): Route {
+  if (envKey()) return "direct";
+  if (vertexWanted()) return "vertex";
+  return "ai-studio-proxy";
 }
 
 /** Short, user-safe description of an SDK error; full detail goes to the log. */
@@ -84,7 +140,10 @@ export function describeAIError(err: unknown, model = activeModel()): string {
   if (status === "402" || /prepayment credits are depleted/i.test(raw))
     return "the AI credits for this app are used up; an admin needs to add credits or billing in Google AI Studio";
   if (status === "429") return "the AI quota or rate limit was hit; try again in a minute";
-  if (status === "401" || status === "403") return "the AI key was rejected";
+  if (status === "401" || status === "403")
+    return /aiplatform|Vertex AI API|IAM_PERMISSION_DENIED|SERVICE_DISABLED/i.test(raw)
+      ? "Vertex AI is not enabled for this app's Google Cloud project, or the app's service account lacks access"
+      : "the AI key was rejected";
   if (/ECONNREFUSED|fetch failed/i.test(raw)) return "the AI proxy could not be reached";
   if (status && status.startsWith("5")) return "the AI service had an outage; try again";
   return raw.slice(0, 200);
@@ -94,7 +153,7 @@ export async function callAI(
   messages: { role: string; content: string }[],
   schema?: object,
 ): Promise<unknown> {
-  const ai = genai();
+  const { ai, route } = await genai();
   const model = activeModel();
   const system = messages
     .filter((m) => m.role === "system")
@@ -119,7 +178,7 @@ export async function callAI(
     const response = await ai.models.generateContent({ model, contents: prompt, config });
     text = response.text ?? "";
   } catch (err) {
-    console.error("[ai] generateContent failed", { model, route: aiRoute(), err });
+    console.error("[ai] generateContent failed", { model, route, err });
     throw new AIError(`AI request failed: ${describeAIError(err, model)}.`, "request_failed");
   }
 
