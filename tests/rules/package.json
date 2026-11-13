@@ -1,0 +1,14 @@
+{
+  "name": "firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Emulator tests for firestore.rules. Kept out of the app's dependencies. Needs Java 21.",
+  "scripts": {
+    "test": "cp ../../firestore.rules firestore.rules && firebase emulators:exec --only firestore --project demo-rules-test \"node --test *.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.3.0",
+    "firebase-tools": "^15.36.0"
+  }
+}
