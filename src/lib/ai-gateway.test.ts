@@ -67,6 +67,8 @@ describe("vertex route", () => {
     try {
       process.env["K_SERVICE"] = "podiumpipelineos";
       assert.equal(aiRoute(), "vertex");
+      delete process.env["GEMINI_MODEL"];
+      assert.equal(activeModel(), "gemini-3.8-flash");
       process.env["GEMINI_DISABLE_VERTEX"] = "1";
       assert.equal(aiRoute(), "ai-studio-proxy");
       process.env["GEMINI_SERVER_API_KEY"] = "k";

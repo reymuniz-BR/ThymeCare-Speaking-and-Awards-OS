@@ -14,6 +14,12 @@ import { GoogleGenAI } from "@google/genai";
  */
 const DEFAULT_MODEL = "gemini-flash-latest";
 
+/**
+ * Vertex AI has no "-latest" alias (404, checked 2026-11-13), so the Vertex
+ * route pins a model id. Verified live on the app's project in "global".
+ */
+const VERTEX_DEFAULT_MODEL = "gemini-3.8-flash";
+
 export type AIErrorKind = "not_configured" | "request_failed" | "bad_output";
 
 export class AIError extends Error {
@@ -27,7 +33,10 @@ export class AIError extends Error {
 
 /** The active model identifier. */
 export function activeModel(): string {
-  return process.env["GEMINI_MODEL"]?.trim() || DEFAULT_MODEL;
+  return (
+    process.env["GEMINI_MODEL"]?.trim() ||
+    (aiRoute() === "vertex" ? VERTEX_DEFAULT_MODEL : DEFAULT_MODEL)
+  );
 }
 
 /**
