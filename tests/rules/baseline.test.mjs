@@ -14,8 +14,15 @@ import { deleteDoc, doc, getDoc, getDocs, collection, setDoc } from "firebase/fi
 
 let env;
 const PROGRAM = [
-  "opportunities", "opportunity_dates", "submissions", "submission_fields", "speakers",
-  "proof_points", "content_assets", "content_snippets", "discoveries",
+  "opportunities",
+  "opportunity_dates",
+  "submissions",
+  "submission_fields",
+  "speakers",
+  "proof_points",
+  "content_assets",
+  "content_snippets",
+  "discoveries",
 ];
 
 const as = (uid, email, verified = true) =>
@@ -24,7 +31,11 @@ const as = (uid, email, verified = true) =>
 before(async () => {
   env = await initializeTestEnvironment({
     projectId: "demo-rules-test",
-    firestore: { rules: readFileSync("../../firestore.rules", "utf8"), host: "127.0.0.1", port: 8181 },
+    firestore: {
+      rules: readFileSync("../../firestore.rules", "utf8"),
+      host: "127.0.0.1",
+      port: 8181,
+    },
   });
 });
 after(async () => env.cleanup());
@@ -68,7 +79,9 @@ describe("members", () => {
   it("cannot grant access or roles", async () => {
     const db = as("u_member", "member@x.com");
     await assertFails(setDoc(doc(db, "allowed_emails", "evil@y.com"), { email: "evil@y.com" }));
-    await assertFails(setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "admin" }));
+    await assertFails(
+      setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "admin" }),
+    );
   });
 });
 
@@ -84,8 +97,12 @@ describe("admins", () => {
   it("manage the allowlist and roles", async () => {
     const db = as("u_admin", "admin@x.com");
     await assertSucceeds(setDoc(doc(db, "allowed_emails", "new@x.com"), { email: "new@x.com" }));
-    await assertSucceeds(setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "manager" }));
-    await assertFails(setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "god" }));
+    await assertSucceeds(
+      setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "manager" }),
+    );
+    await assertFails(
+      setDoc(doc(db, "user_roles", "u_member"), { user_id: "u_member", role: "god" }),
+    );
   });
 });
 
