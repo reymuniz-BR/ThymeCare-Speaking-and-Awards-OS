@@ -4,17 +4,18 @@ import { AppShell } from "@/components/app-shell";
 import { useActivity } from "@/lib/hooks";
 import { formatDateTime, labelize } from "@/lib/program";
 import { Input } from "@/components/ui/input";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => ({
     meta: [
-      { title: "Activity & Changes — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Activity & Changes") },
       {
         name: "description",
         content:
           "Audit trail of every deadline change, status move and submission update across the speaking and awards program.",
       },
-      { property: "og:title", content: "Activity Log — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Activity Log") },
       {
         property: "og:description",
         content: "Full change history so the team can see what moved and when.",

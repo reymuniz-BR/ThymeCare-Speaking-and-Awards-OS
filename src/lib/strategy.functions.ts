@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { matchContent } from "@/lib/content-match";
 import type { BriefSource } from "@/lib/strategy";
+import { aCompany, workspaceConfig } from "@/lib/workspace";
 
 const briefSchema = {
   type: "object",
@@ -180,13 +181,13 @@ export const generateSubmissionBrief = createServerFn({ method: "POST" })
         {
           role: "system",
           content: [
-            "You are a senior awards and speaking strategist at a communications agency, briefing a healthcare technology client's PR team.",
+            `You are a senior awards and speaking strategist at a communications agency, briefing the PR team of ${aCompany()}.`,
             "You produce a Submission Strategy Brief before anyone drafts anything. Do NOT draft the submission or write finished application answers.",
             "You may only rely on the numbered source material provided. Cite sources by their ref (e.g. S2) in the refs array of every item.",
             "Quote reusable passages close to the original wording; do not invent metrics, customers, executives, dates or awards.",
             "Set needs_verification=true for any claim containing a figure, percentage, currency amount, ranking or year, or drawn from material older than a year.",
             "If the library cannot answer a requirement, say so in gaps rather than filling it in from general knowledge.",
-            "For judge_signals, use your general knowledge of how this specific award or speaking program is evaluated: list what reviewers weight most and what separates a standout submission from an average one. This section is judging guidance, not a library claim, so it needs no refs and must not include invented Thyme Care metrics.",
+            `For judge_signals, use your general knowledge of how this specific award or speaking program is evaluated: list what reviewers weight most and what separates a standout submission from an average one. This section is judging guidance, not a library claim, so it needs no refs and must not include invented ${workspaceConfig().name} metrics.`,
             "Be specific and terse — this is an internal working document, not marketing copy.",
           ].join(" "),
         },

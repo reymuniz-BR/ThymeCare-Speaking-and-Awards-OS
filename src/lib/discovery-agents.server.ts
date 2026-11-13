@@ -70,38 +70,9 @@ const candidateSchema = {
 };
 
 /** The specialist research agents. Each owns one lane of the landscape. */
-export const DISCOVERY_AGENTS: { id: string; label: string; beat: string }[] = [
-  {
-    id: "awards",
-    label: "Awards & rankings",
-    beat: "National and industry award programs, best-in-class product awards, innovation awards and company rankings run by established publications, analyst firms and awards bodies (e.g. Fast Company, Fierce, Digital Health, MedTech Breakthrough, Inc., Deloitte).",
-  },
-  {
-    id: "conferences",
-    label: "Conferences & calls for speakers",
-    beat: "Healthcare, health-tech, payer, provider and oncology conferences with open calls for speakers, panel submissions, abstract deadlines or programming committees (e.g. HLTH, ViVE, HIMSS, AHIP, ASCO-adjacent, NAACOS).",
-  },
-  {
-    id: "executive",
-    label: "Executive & leadership recognition",
-    beat: "Individual executive honors: leadership lists, women-in-health-IT lists, 40-under-40, chief-officer awards, board and fellowship nominations, and personal recognition programs relevant to senior healthcare leaders.",
-  },
-  {
-    id: "growth",
-    label: "Growth, workplace & culture lists",
-    beat: "Fast-growth and workplace recognition: Inc. 5000, Deloitte Fast 500, Best Places to Work, Great Place to Work, regional business-journal fastest-growing and top-workplace programs.",
-  },
-  {
-    id: "clinical",
-    label: "Clinical, payer & policy programs",
-    beat: "Associations, payer/provider bodies, value-based care, oncology care and policy organizations running recognition programs, case-study calls, quality awards and speaking slots at member meetings.",
-  },
-  {
-    id: "regional",
-    label: "Regional & niche media",
-    beat: "Regional business journals, state healthcare associations, city-level tech and healthcare awards, and niche trade media programs that broader searches usually miss.",
-  },
-];
+export { THYME_CARE_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
+import { THYME_CARE_DISCOVERY_BEATS as DISCOVERY_AGENTS } from "@/lib/workspace";
+import { aCompany } from "@/lib/workspace";
 
 async function runAgent(
   agent: { id: string; label: string; beat: string },
@@ -112,7 +83,7 @@ async function runAgent(
       {
         role: "system",
         content: [
-          `You are the "${agent.label}" specialist on a research team supporting a healthcare technology company's PR and communications team.`,
+          `You are the "${agent.label}" specialist on a research team supporting the PR and communications team of ${aCompany()}.`,
           `Your beat: ${agent.beat}`,
           "Stay inside your beat — teammates cover the other lanes, so do not return generic results outside your specialty.",
           "Only return real programs run by credible organizations. Never invent a program, an organizer or a URL.",

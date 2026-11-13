@@ -1,4 +1,5 @@
 import { buildIcs, DEFAULT_TIMEZONE, type CalendarEvent } from "@/lib/calendar";
+import { workspaceConfig } from "@/lib/workspace";
 
 const KIND_LABEL: Record<string, string> = {
   opens: "Opens",
@@ -47,7 +48,7 @@ export async function buildProgramCalendar(): Promise<string> {
     for (const d of (o.opportunity_dates ?? []) as { id: string; kind: string; date: string }[]) {
       const timed = d.kind === "deadline" || d.kind === "extended_deadline";
       events.push({
-        uid: `${d.id}@thymecare-awards-os`,
+        uid: `${d.id}@${workspaceConfig().calendarUidDomain}`,
         title: `${KIND_LABEL[d.kind] ?? d.kind}: ${o.name}`,
         date: d.date,
         time: timed ? (o.deadline_time ?? null) : null,

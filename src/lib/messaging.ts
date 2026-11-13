@@ -6,12 +6,13 @@
  * can both show the pillars in the workspace and always feed them to the AI
  * drafting features as canonical language.
  */
+import { messagingDocUrl, workspaceConfig } from "@/lib/workspace";
 
 export const MASTER_MESSAGING_TAG = "master-messaging";
 
-export const MASTER_MESSAGING_DOC_ID = "1oCDR8IvkKXs4bFU3y0U9eh10VBkXndIabZkaw8pVQ3Q";
+export const MASTER_MESSAGING_DOC_ID = workspaceConfig().drive.messagingDocId;
 
-export const MASTER_MESSAGING_DOC_URL = `https://docs.google.com/document/d/${MASTER_MESSAGING_DOC_ID}/edit`;
+export const MASTER_MESSAGING_DOC_URL = messagingDocUrl();
 
 export type MessagingSection = {
   heading: string;

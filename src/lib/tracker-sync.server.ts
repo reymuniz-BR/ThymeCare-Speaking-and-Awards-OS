@@ -6,9 +6,10 @@ import type { AppDb } from "@/integrations/supabase/firestore/builder";
  * of truth for the fields the team maintains there.
  */
 import * as XLSX from "xlsx";
+import { workspaceConfig } from "@/lib/workspace";
 
 /** The tracker workbook in the shared team Drive. */
-export const TRACKER_FILE_ID = "1lr4-FbpgLjQOkjtQJz2w1A_qIb-DRdrI";
+export const TRACKER_FILE_ID = workspaceConfig().drive.trackerFileId;
 
 export type SheetRow = Record<string, string>;
 

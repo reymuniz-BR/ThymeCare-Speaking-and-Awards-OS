@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Download, ExternalLink, Search } from "lucide-react";
 import { CLIENT_APPROVALS, downloadCsv, opportunitiesToCsv } from "@/lib/budget";
+import { pageTitle } from "@/lib/workspace";
 
 const TABS = ["tracked", "review", "closed"] as const;
 type Tab = (typeof TABS)[number];
@@ -45,13 +46,13 @@ export const Route = createFileRoute("/_authenticated/opportunities")({
   },
   head: () => ({
     meta: [
-      { title: "Opportunities — Thyme Care Speaking & Awards" },
+      { title: pageTitle("Opportunities") },
       {
         name: "description",
         content:
           "Every speaking and award opportunity we track, plus newly found programs waiting for a yes or no.",
       },
-      { property: "og:title", content: "Opportunities — Thyme Care Speaking & Awards" },
+      { property: "og:title", content: pageTitle("Opportunities") },
       {
         property: "og:description",
         content: "One list of awards and speaking opportunities, sorted by what is due next.",

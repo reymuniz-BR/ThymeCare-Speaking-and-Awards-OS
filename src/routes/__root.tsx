@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { installStaleChunkRecovery, tryRecoverFromStaleChunk } from "../lib/stale-chunk-recovery";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { productName } from "@/lib/workspace";
 
 function NotFoundComponent() {
   return (
@@ -86,7 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Thyme Care Speaking and Awards Operating System" },
+      { title: productName() },
       {
         name: "description",
         content:

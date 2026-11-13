@@ -24,17 +24,18 @@ import { cn } from "@/lib/utils";
 import { ExternalLink, Plus, RefreshCw, Search } from "lucide-react";
 import { syncDriveLibrary, type DriveSyncPage } from "@/lib/drive.functions";
 import { MessagingBank } from "@/components/messaging-bank";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({
     meta: [
-      { title: "Library — Thyme Care Speaking & Awards" },
+      { title: pageTitle("Library") },
       {
         name: "description",
         content:
           "Search previous submissions, messaging, executive bios and proof points the team can reuse in new applications.",
       },
-      { property: "og:title", content: "Library — Thyme Care Speaking & Awards" },
+      { property: "og:title", content: pageTitle("Library") },
       {
         property: "og:description",
         content: "Reusable answers, bios, messaging and past applications in one searchable place.",

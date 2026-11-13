@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authorizeHook, json } from "@/lib/hook-auth.server";
+import { workspaceConfig } from "@/lib/workspace";
 
 const JOB_NAME = "discover-daily";
 const PAUSE_NAME = "discover-daily-paused";
@@ -14,15 +15,7 @@ const MAX_ROWS = 12;
  * Rotating weekly briefs: each Monday covers one slice of the landscape, so the
  * automated scan stays cheap and specific instead of re-running everything.
  */
-const WEEKLY_BRIEFS: string[] = [
-  "Healthcare, digital health and health technology company awards, innovation awards and industry rankings with submission deadlines in the next 9 months.",
-  "Open calls for speakers, speaker nominations and conference programming opportunities at US healthcare, payer, provider and digital health conferences.",
-  "Executive awards, healthcare leadership lists and 'most influential' rankings recognizing individual healthcare technology executives.",
-  "Fast-growth, workplace and high-performing company lists open to venture-backed healthcare technology and value-based care companies.",
-  "Awards, rankings and speaking opportunities focused on oncology and cancer care, value-based care and employer healthcare innovation.",
-  "Regional business journal, state healthcare association and niche trade-media award and speaking programs relevant to a US healthcare technology company.",
-  "Association, payer, provider and policy-body recognition programs, quality awards and member-meeting speaking slots in healthcare.",
-];
+const WEEKLY_BRIEFS = workspaceConfig().discovery.weeklyBriefs;
 
 /** Terminal AI-gateway states that must park the job instead of retrying. */
 function isBlocked(message: string): boolean {

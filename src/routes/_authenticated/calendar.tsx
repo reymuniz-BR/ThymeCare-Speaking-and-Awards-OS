@@ -29,17 +29,18 @@ import {
   downloadIcs,
   type CalendarEvent,
 } from "@/lib/calendar";
+import { workspaceConfig, pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
-      { title: "Calendar & Deadlines — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Calendar & Deadlines") },
       {
         name: "description",
         content:
           "Month view and runway list of every opening date, deadline, notification and event across the program.",
       },
-      { property: "og:title", content: "Deadline Calendar — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Deadline Calendar") },
       {
         property: "og:description",
         content: "See every program milestone by month so nothing slips.",
@@ -85,7 +86,7 @@ function milestoneEvent(
   const timed = kind === "deadline" || kind === "extended_deadline";
   const link = o.application_url ?? o.url ?? null;
   return {
-    uid: `${id}@thymecare-awards-os`,
+    uid: `${id}@${workspaceConfig().calendarUidDomain}`,
     title: `${KIND_TITLE[kind] ?? labelize(kind)}: ${o.name}`,
     date,
     time: timed ? (o.deadline_time ?? "").slice(0, 5) || null : null,

@@ -35,17 +35,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { pageTitle } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/submissions_/$id")({
   head: () => ({
     meta: [
-      { title: "Draft submission — Thyme Care Speaking & Awards OS" },
+      { title: pageTitle("Draft submission") },
       {
         name: "description",
         content:
           "Draft answers against application questions and repurpose approved content from previous submissions.",
       },
-      { property: "og:title", content: "Draft submission — Thyme Care Speaking & Awards OS" },
+      { property: "og:title", content: pageTitle("Draft submission") },
       {
         property: "og:description",
         content: "Answer application questions with reusable, approved language.",
