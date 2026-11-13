@@ -53,3 +53,35 @@ it("describeAIError names depleted prepaid credits", () => {
   );
   assert.match(describeAIError(err, "m"), /credits for this app are used up/);
 });
+
+describe("vertex route", () => {
+  it("is chosen on Cloud Run with no key, and can be disabled", () => {
+    const saved = { ...process.env };
+    for (const k of [
+      "GEMINI_SERVER_API_KEY",
+      "GEMINI_API_KEY",
+      "GOOGLE_API_KEY",
+      "GEMINI_DISABLE_VERTEX",
+    ])
+      delete process.env[k];
+    try {
+      process.env["K_SERVICE"] = "podiumpipelineos";
+      assert.equal(aiRoute(), "vertex");
+      delete process.env["GEMINI_MODEL"];
+      assert.equal(activeModel(), "gemini-3.8-flash");
+      process.env["GEMINI_DISABLE_VERTEX"] = "1";
+      assert.equal(aiRoute(), "ai-studio-proxy");
+      process.env["GEMINI_SERVER_API_KEY"] = "k";
+      assert.equal(aiRoute(), "direct");
+    } finally {
+      process.env = saved;
+    }
+  });
+
+  it("explains a disabled Vertex API", () => {
+    const err = new Error(
+      '{"error":{"code":403,"message":"Vertex AI API has not been used in project","status":"PERMISSION_DENIED"}}',
+    );
+    assert.match(describeAIError(err, "m"), /Vertex AI is not enabled/);
+  });
+});
