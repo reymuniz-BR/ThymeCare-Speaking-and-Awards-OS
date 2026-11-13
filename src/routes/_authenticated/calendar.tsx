@@ -197,7 +197,7 @@ function CalendarPage() {
             className="h-8"
             onClick={() =>
               downloadIcs(
-                "thyme-care-program",
+                "podium-program",
                 buildIcs(
                   events.map((e) =>
                     milestoneEvent(e.id, e.kind, e.date, e.opportunity as MilestoneOpportunity),

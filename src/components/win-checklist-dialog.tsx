@@ -55,7 +55,7 @@ export function WinChecklistDialog({
   const [createProofPoint, setCreateProofPoint] = useState(true);
   const [proofTitle, setProofTitle] = useState(defaultTitle);
   const [proofContent, setProofContent] = useState(
-    `${workspaceConfig().name} was named a ${year} winner of ${opportunityName ?? "this award"}.`,
+    `We were named a ${year} winner of ${opportunityName ?? "this award"}.`,
   );
   const [saving, setSaving] = useState(false);
 

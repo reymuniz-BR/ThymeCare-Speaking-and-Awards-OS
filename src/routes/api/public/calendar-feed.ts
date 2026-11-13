@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/calendar-feed")({
           return new Response(ics, {
             headers: {
               "Content-Type": "text/calendar; charset=utf-8",
-              "Content-Disposition": 'inline; filename="thyme-care-program.ics"',
+              "Content-Disposition": 'inline; filename="podium-program.ics"',
               "Cache-Control": "public, max-age=1800",
             },
           });

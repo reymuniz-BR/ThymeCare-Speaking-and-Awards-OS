@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/speakers")({
       { title: pageTitle("Speakers") },
       {
         name: "description",
-        content: `Directory of ${workspaceConfig().name} executives, subject matter experts and external co-presenters with bios, topics and availability.`,
+        content: `Directory of executives, subject matter experts and external co-presenters with bios, topics and availability.`,
       },
       { property: "og:title", content: pageTitle("Speakers") },
       {
@@ -182,7 +182,7 @@ function SpeakersPage() {
                       {s.is_external ? (
                         <Chip tone="warning">External</Chip>
                       ) : (
-                        <Chip tone="info">{workspaceConfig().name}</Chip>
+                        <Chip tone="info">Internal</Chip>
                       )}
                       {usage[s.id] ? (
                         <Chip tone="neutral">
@@ -285,7 +285,7 @@ function SpeakersPage() {
                     checked={draft.is_external}
                     onChange={(e) => setDraft((d) => ({ ...d, is_external: e.target.checked }))}
                   />
-                  External co-presenter (not {workspaceConfig().name})
+                  External co-presenter (outside organization)
                 </label>
                 <div>
                   <Label className="mb-1.5 block text-[12px]">Organization</Label>
@@ -294,7 +294,7 @@ function SpeakersPage() {
                     onChange={(e) => setDraft((d) => ({ ...d, organization: e.target.value }))}
                     className="h-9"
                     placeholder={
-                      draft.is_external ? workspaceConfig().partnerExample : workspaceConfig().name
+                      draft.is_external ? workspaceConfig().partnerExample : "Your organization"
                     }
                   />
                 </div>

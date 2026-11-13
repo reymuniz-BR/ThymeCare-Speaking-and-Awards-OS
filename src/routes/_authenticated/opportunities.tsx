@@ -204,7 +204,7 @@ function OpportunitiesPage() {
       return;
     }
     const stamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(`thyme-care-opportunities-${stamp}.csv`, opportunitiesToCsv(rows));
+    downloadCsv(`podium-opportunities-${stamp}.csv`, opportunitiesToCsv(rows));
     toast.success(`Exported ${rows.length} opportunities`);
   }
 

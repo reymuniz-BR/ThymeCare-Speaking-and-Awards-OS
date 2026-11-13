@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PRODUCT, workspaceConfig } from "@/lib/workspace";
+import { PRODUCT } from "@/lib/workspace";
 
 /** The primary destinations. Everything else is secondary. */
 const NAV = [
@@ -82,7 +82,7 @@ export function AppShell({
             <div className="leading-tight">
               <div className="text-[13px] font-semibold">{PRODUCT.name}</div>
               <div className="text-[9.5px] tracking-[0.14em] text-sidebar-foreground/60 uppercase">
-                {workspaceConfig().name}
+                {PRODUCT.tagline}
               </div>
             </div>
           </Link>

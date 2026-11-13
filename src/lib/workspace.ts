@@ -9,8 +9,6 @@ export type DiscoveryBeat = { id: string; label: string; beat: string };
 
 export type WorkspaceConfig = {
   id: string;
-  /** Client name as shown in the app ("Thyme Care"). */
-  name: string;
   /**
    * How AI prompts describe the client, as a noun phrase that reads after
    * "a"/"an" is stripped, e.g. "healthcare technology company".
@@ -38,7 +36,7 @@ export type WorkspaceConfig = {
   };
 };
 
-export const THYME_CARE_FOCUS_AREAS: string[] = [
+export const DEFAULT_FOCUS_AREAS: string[] = [
   "healthcare",
   "digital health",
   "health technology",
@@ -56,7 +54,7 @@ export const THYME_CARE_FOCUS_AREAS: string[] = [
   "executive leadership",
 ];
 
-export const THYME_CARE_DISCOVERY_BEATS: DiscoveryBeat[] = [
+export const DEFAULT_DISCOVERY_BEATS: DiscoveryBeat[] = [
   {
     id: "awards",
     label: "Awards & rankings",
@@ -89,9 +87,8 @@ export const THYME_CARE_DISCOVERY_BEATS: DiscoveryBeat[] = [
   },
 ];
 
-const THYME_CARE: WorkspaceConfig = {
-  id: "thyme-care",
-  name: "Thyme Care",
+const DEFAULT_WORKSPACE: WorkspaceConfig = {
+  id: "default",
   companyKind: "healthcare technology company",
   partnerExample: "Partner health plan",
   drive: {
@@ -99,10 +96,10 @@ const THYME_CARE: WorkspaceConfig = {
     messagingDocId: "1oCDR8IvkKXs4bFU3y0U9eh10VBkXndIabZkaw8pVQ3Q",
     trackerFileId: "1lr4-FbpgLjQOkjtQJz2w1A_qIb-DRdrI",
   },
-  calendarUidDomain: "thymecare-awards-os",
+  calendarUidDomain: "podium-awards-os",
   discovery: {
-    focusAreas: THYME_CARE_FOCUS_AREAS,
-    beats: THYME_CARE_DISCOVERY_BEATS,
+    focusAreas: DEFAULT_FOCUS_AREAS,
+    beats: DEFAULT_DISCOVERY_BEATS,
     presets: [
       {
         label: "Awards & rankings",
@@ -143,11 +140,11 @@ const THYME_CARE: WorkspaceConfig = {
   },
 };
 
-export const DEFAULT_WORKSPACE_ID = THYME_CARE.id;
+export const DEFAULT_WORKSPACE_ID = DEFAULT_WORKSPACE.id;
 
 /** The active workspace. Phase 1: always the single configured client. */
 export function workspaceConfig(): WorkspaceConfig {
-  return THYME_CARE;
+  return DEFAULT_WORKSPACE;
 }
 
 /** The product itself. Clients are workspaces inside it, never the brand. */

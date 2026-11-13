@@ -6,7 +6,7 @@
  * apart and the team submits against the real cut-off. When no time is set the
  * milestone is treated as an all-day event.
  */
-import { PRODUCT, workspaceConfig } from "@/lib/workspace";
+import { PRODUCT } from "@/lib/workspace";
 
 export const TIMEZONE_OPTIONS = [
   { value: "America/Los_Angeles", label: "Pacific (PT)" },
@@ -165,13 +165,13 @@ export function toVEvent(e: CalendarEvent, now = new Date()): string[] {
 
 export function buildIcs(
   events: CalendarEvent[],
-  calendarName = `${workspaceConfig().name} Program Dates`,
+  calendarName = `${PRODUCT.name} program dates`,
 ): string {
   const now = new Date();
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//${PRODUCT.name}//${workspaceConfig().name}//EN`,
+    `PRODID:-//${PRODUCT.name}//${PRODUCT.name}//EN`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeIcs(calendarName)}`,
