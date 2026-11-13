@@ -87,6 +87,31 @@ export function isPrivateAddress(address: string): boolean {
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
 /**
+ * Decompress a response body. The cap applies to the decompressed size too,
+ * so a small compressed body cannot expand into a huge one.
+ */
+export function decodeBody(
+  body: Buffer,
+  encoding: string | string[] | undefined,
+  zlib: typeof import("node:zlib"),
+): Buffer {
+  const enc = String(encoding ?? "").toLowerCase();
+  const cap = { maxOutputLength: MAX_BODY_BYTES };
+  try {
+    if (enc === "gzip") return zlib.gunzipSync(body, cap);
+    if (enc === "deflate") return zlib.inflateSync(body, cap);
+    if (enc === "br") return zlib.brotliDecompressSync(body, cap);
+    return body;
+  } catch (e) {
+    throw new Error(
+      e instanceof RangeError
+        ? "That page is too large to read."
+        : "That page could not be decoded.",
+    );
+  }
+}
+
+/**
  * One GET with the connection pinned to a vetted address. The DNS lookup runs
  * inside the socket connect and refuses private results, so a public hostname
  * that resolves (or rebinds) to an internal address never gets a connection.
@@ -140,14 +165,11 @@ async function pinnedRequest(url: URL, init: RequestInit): Promise<Response> {
         });
         res.on("error", reject);
         res.on("end", () => {
-          let body: Buffer = Buffer.concat(chunks);
+          let body: Buffer;
           try {
-            const enc = String(res.headers["content-encoding"] ?? "").toLowerCase();
-            if (enc === "gzip") body = zlib.gunzipSync(body);
-            else if (enc === "deflate") body = zlib.inflateSync(body);
-            else if (enc === "br") body = zlib.brotliDecompressSync(body);
-          } catch {
-            return reject(new Error("That page could not be decoded."));
+            body = decodeBody(Buffer.concat(chunks), res.headers["content-encoding"], zlib);
+          } catch (e) {
+            return reject(e);
           }
           const out = new Headers();
           for (const [k, v] of Object.entries(res.headers)) {
