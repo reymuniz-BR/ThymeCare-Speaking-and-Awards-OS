@@ -389,6 +389,16 @@ describe("update / delete / upsert", () => {
     assert.equal(await claim("2026-01-09T00:00:00.000Z", "2026-01-15T00:00:00.000Z"), "claimed"); // window over
   });
 
+  it("upserts a role keyed by user_id: one document per user, role replaced", async () => {
+    const { db } = fresh();
+    const set = (role: "manager" | "contributor") =>
+      db.from("user_roles").upsert({ user_id: "uid_hailey", role }, { onConflict: "user_id" });
+    assert.equal((await set("manager")).error, null);
+    assert.equal((await set("contributor")).error, null);
+    const { data } = await db.from("user_roles").select("user_id, role");
+    assert.deepEqual(data, [{ user_id: "uid_hailey", role: "contributor" }]);
+  });
+
   it("upserts on natural keys: onConflict name / week_start,item_key / drive_file_id", async () => {
     const { db } = fresh();
     await db
