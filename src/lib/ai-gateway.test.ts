@@ -46,3 +46,10 @@ describe("ai-gateway", () => {
     assert.match(describeAIError(new Error("HTTP 503")), /outage/);
   });
 });
+
+it("describeAIError names depleted prepaid credits", () => {
+  const err = new Error(
+    '{"error":{"code":402,"message":"Your prepayment credits are depleted.","status":"RESOURCE_EXHAUSTED"}}',
+  );
+  assert.match(describeAIError(err, "m"), /credits for this app are used up/);
+});

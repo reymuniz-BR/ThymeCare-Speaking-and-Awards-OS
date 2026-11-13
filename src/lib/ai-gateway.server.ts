@@ -81,6 +81,8 @@ export function describeAIError(err: unknown, model = activeModel()): string {
   const raw = err instanceof Error ? err.message : String(err);
   const status = /"code"\s*:\s*(\d{3})/.exec(raw)?.[1] ?? /\b([45]\d\d)\b/.exec(raw)?.[1];
   if (status === "404") return `the model "${model}" was not found`;
+  if (status === "402" || /prepayment credits are depleted/i.test(raw))
+    return "the AI credits for this app are used up; an admin needs to add credits or billing in Google AI Studio";
   if (status === "429") return "the AI quota or rate limit was hit; try again in a minute";
   if (status === "401" || status === "403") return "the AI key was rejected";
   if (/ECONNREFUSED|fetch failed/i.test(raw)) return "the AI proxy could not be reached";

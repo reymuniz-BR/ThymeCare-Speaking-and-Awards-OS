@@ -7,7 +7,7 @@ export const Route = createFileRoute("/privacy")({
       { title: pageTitle("Privacy") },
       {
         name: "description",
-        content: "What the Speaking & Awards workspace collects and how it uses Google data.",
+        content: "What Podium collects and how it uses Google data.",
       },
     ],
   }),
