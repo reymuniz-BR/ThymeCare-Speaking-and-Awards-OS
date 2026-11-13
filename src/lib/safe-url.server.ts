@@ -73,24 +73,116 @@ export function assertPublicHttpUrl(raw: string): URL {
   return url;
 }
 
+/** True when a resolved address is loopback, link-local, private or reserved. */
+export function isPrivateAddress(address: string): boolean {
+  if (!address.includes(":")) return isPrivateIPv4(address);
+  const h = address.toLowerCase();
+  const mapped = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/.exec(h);
+  if (mapped?.[1]) return isPrivateIPv4(mapped[1]);
+  // Only global unicast (2000::/3) is public; documentation range excluded.
+  if (!/^[23][0-9a-f]{0,3}:/.test(h)) return true;
+  return h.startsWith("2001:db8:");
+}
+
+const MAX_BODY_BYTES = 5 * 1024 * 1024;
+
 /**
- * fetch() that validates the target and every redirect hop against
- * assertPublicHttpUrl. Returns the final response.
+ * One GET with the connection pinned to a vetted address. The DNS lookup runs
+ * inside the socket connect and refuses private results, so a public hostname
+ * that resolves (or rebinds) to an internal address never gets a connection.
+ */
+async function pinnedRequest(url: URL, init: RequestInit): Promise<Response> {
+  const [{ request: httpRequest }, { request: httpsRequest }, dns, zlib] = await Promise.all([
+    import("node:http"),
+    import("node:https"),
+    import("node:dns"),
+    import("node:zlib"),
+  ]);
+
+  const lookup = (
+    hostname: string,
+    options: object,
+    callback: (err: Error | null, address: string | object[], family?: number) => void,
+  ) => {
+    dns.lookup(hostname, { all: true }, (err, addresses) => {
+      if (err) return callback(err, "");
+      const blocked = addresses.find((a) => isPrivateAddress(a.address));
+      if (blocked || addresses.length === 0) {
+        return callback(
+          new Error("That address points at a private network and cannot be checked."),
+          "",
+        );
+      }
+      if ((options as { all?: boolean }).all) return callback(null, addresses);
+      callback(null, addresses[0]!.address, addresses[0]!.family);
+    });
+  };
+
+  const headers: Record<string, string> = {};
+  new Headers(init.headers).forEach((v, k) => (headers[k] = v));
+  headers["accept-encoding"] = "gzip, deflate, br";
+
+  const send = url.protocol === "https:" ? httpsRequest : httpRequest;
+  return await new Promise<Response>((resolve, reject) => {
+    const req = send(
+      url,
+      { method: "GET", headers, lookup: lookup as never, signal: init.signal ?? undefined },
+      (res) => {
+        const chunks: Buffer[] = [];
+        let size = 0;
+        res.on("data", (c: Buffer) => {
+          size += c.length;
+          if (size > MAX_BODY_BYTES) {
+            req.destroy(new Error("That page is too large to read."));
+            return;
+          }
+          chunks.push(c);
+        });
+        res.on("error", reject);
+        res.on("end", () => {
+          let body: Buffer = Buffer.concat(chunks);
+          try {
+            const enc = String(res.headers["content-encoding"] ?? "").toLowerCase();
+            if (enc === "gzip") body = zlib.gunzipSync(body);
+            else if (enc === "deflate") body = zlib.inflateSync(body);
+            else if (enc === "br") body = zlib.brotliDecompressSync(body);
+          } catch {
+            return reject(new Error("That page could not be decoded."));
+          }
+          const out = new Headers();
+          for (const [k, v] of Object.entries(res.headers)) {
+            if (v === undefined || k === "content-encoding" || k === "content-length") continue;
+            out.set(k, Array.isArray(v) ? v.join(", ") : v);
+          }
+          const status = res.statusCode ?? 502;
+          const noBody = status === 204 || status === 304 || (status >= 300 && status < 400);
+          resolve(new Response(noBody ? null : new Uint8Array(body), { status, headers: out }));
+        });
+      },
+    );
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+/**
+ * GET that only reaches public hosts. Every hop is checked twice: the URL text
+ * (assertPublicHttpUrl) and the resolved address at connect time
+ * (pinnedRequest). Redirects are followed manually so each hop is re-checked.
  */
 export async function safeFetch(
   raw: string,
   init: RequestInit & { maxRedirects?: number } = {},
 ): Promise<Response> {
   const { maxRedirects = 5, ...rest } = init;
-  let current = assertPublicHttpUrl(raw).toString();
+  let current = assertPublicHttpUrl(raw);
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    const res = await fetch(current, { ...rest, redirect: "manual" });
+    const res = await pinnedRequest(current, rest);
     if (res.status >= 300 && res.status < 400) {
       const location = res.headers.get("location");
       if (!location) return res;
-      // Re-validate the hop before following it.
-      current = assertPublicHttpUrl(new URL(location, current).toString()).toString();
+      current = assertPublicHttpUrl(new URL(location, current).toString());
       continue;
     }
     return res;
