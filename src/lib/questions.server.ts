@@ -55,11 +55,10 @@ export async function extractQuestionsFrom(input: {
   let body = (input.text ?? "").trim();
 
   if (!body && input.url) {
-    const res = await fetch(input.url, {
-      redirect: "follow",
+    const { safeFetch } = await import("@/lib/safe-url.server");
+    const res = await safeFetch(input.url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; ThymeCareProgramMonitor/1.0; +https://lovable.dev) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (compatible; ProgramMonitor/1.0) AppleWebKit/537.36",
         Accept: "text/html,application/xhtml+xml",
       },
       signal: AbortSignal.timeout(20_000),
